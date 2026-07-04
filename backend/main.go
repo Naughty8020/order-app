@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"order-system/config"
+	"order-system/routers"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,6 +22,9 @@ func main() {
 			"message": "Hello World",
 		})
 	})
+
+	config.SeedMenus()
+	routers.RegisterRoutes(r)
 
 	r.Run("0.0.0.0:8080")
 }

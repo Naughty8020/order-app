@@ -6,11 +6,11 @@
 
 ### バックエンド (Backend)
 - **言語**: Go 1.25.11
-- **フレームワーク**: [Gin](https://gin-gonic.github.io/gin/) (Web APIサーバー)
-- **ORM**: [GORM](https://gorm.io/) (MySQL対応)
+- **フレームワーク**: [Gin](https://gin-gonic.github.io/gin/)
+- **ORM**: [GORM](https://gorm.io/)
 - **データベース**: MySQL 8.0
 - **開発ツール**: [Air](https://github.com/air-verse/air) (Goのライブリロードツール)
-- **コンテナ化**: Docker / Docker Compose
+- **コンテナ**: Docker / Docker Compose
 
 ### フロントエンド (Frontend)
 - **言語**: TypeScript 6
@@ -39,7 +39,7 @@ docker compose up --build
 - APIサーバーは、ライブリロードツール `Air` を使用して `http://localhost:8080` で起動します。
 - DB（MySQL 8.0）はポート `3306` でバックグラウンドで起動し、ヘルスチェックが通るまでAPIサーバーの起動を待機します。
 
-#### 2. ローカル環境で直接実行する場合（MySQLは別途起動済みとする）
+<!-- #### 2. ローカル環境で直接実行する場合（MySQLは別途起動済みとする）
 ```bash
 cd backend
 # DB接続情報などの環境変数を設定した上で実行します
@@ -47,7 +47,7 @@ cd backend
 air -c .air.toml
 # または直接実行する場合
 go run main.go
-```
+``` -->
 
 ### フロントエンドの起動
 
