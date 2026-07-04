@@ -12,7 +12,7 @@ import (
 func CreateOrder(c *gin.Context) {
 	var input struct {
 		MenuID   uint `json:"menu_id" binding:"required"`
-		Quantity int  `json:"quantity" binding:"required"`
+		Quantity int  `json:"quantity" binding:"required,gt=0"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
