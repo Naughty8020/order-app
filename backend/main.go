@@ -25,6 +25,7 @@ func main() {
 
 	config.SeedMenus()
 	routers.RegisterRoutes(r)
+	routers.RegisterMenuRoutes(r)
 
 	r.Run("0.0.0.0:8080")
 }

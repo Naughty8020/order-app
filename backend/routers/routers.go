@@ -13,3 +13,11 @@ func RegisterRoutes(r *gin.Engine) {
 		orderGroup.GET("", controllers.GetOrders)
 	}
 }
+
+func RegisterMenuRoutes(r *gin.Engine) {
+	menuGroup := r.Group("/api/menus")
+	{
+		menuGroup.POST("", controllers.CreateMenu)
+		menuGroup.GET("", controllers.GetMenus)
+	}
+}
