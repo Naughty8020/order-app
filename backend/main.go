@@ -1,22 +1,26 @@
 package main
 
 import (
+	"log"
 	"net/http"
+
+	"order-system/config"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// Ginのデフォルトルーターを作成
+	config.InitDB()
+
 	r := gin.Default()
 
-	// ルートURL (http://localhost:8080/) にアクセスしたときの処理
+	log.Println("サーバーを起動します...")
+
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Hello World",
 		})
 	})
 
-	// サーバーを起動 (ポート: 8080)
 	r.Run("0.0.0.0:8080")
 }
