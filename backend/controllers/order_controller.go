@@ -21,6 +21,10 @@ func CreateOrder(c *gin.Context) {
 	}
 
 	tx := config.DB.Begin()
+	if tx.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
 
 	var menu models.Menu
 	if err := tx.First(&menu, input.MenuID).Error; err != nil {
@@ -49,7 +53,12 @@ func CreateOrder(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create order"})
 		return
 	}
-	tx.Commit()
+
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
+		return
+	}
 
 	config.DB.Preload("Menu").First(&order, order.ID)
 	c.JSON(http.StatusCreated, gin.H{"order": order})
