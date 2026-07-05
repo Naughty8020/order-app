@@ -47,9 +47,9 @@ func GetMenus(c *gin.Context) {
 
 func UpdateMenu(c *gin.Context) {
 	var input struct {
-		Name        string `json:"name"`
-		Price       int    `json:"price" binding:"omitempty,gt=0"`
-		IsAvailable bool   `json:"is_available"`
+		Name        *string `json:"name"`
+		Price       *int    `json:"price" binding:"omitempty,gt=0"`
+		IsAvailable *bool   `json:"is_available"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -63,9 +63,15 @@ func UpdateMenu(c *gin.Context) {
 		return
 	}
 
-	menu.Name = input.Name
-	menu.Price = input.Price
-	menu.IsAvailable = input.IsAvailable
+	if input.Name != nil {
+		menu.Name = *input.Name
+	}
+	if input.Price != nil {
+		menu.Price = *input.Price
+	}
+	if input.IsAvailable != nil {
+		menu.IsAvailable = *input.IsAvailable
+	}
 
 	if err := config.DB.Save(&menu).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update menu"})
