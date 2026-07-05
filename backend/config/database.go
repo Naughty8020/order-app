@@ -32,7 +32,7 @@ func InitDB() {
 
 	log.Println("GORM: MySQLへの接続に成功しました！🎉")
 
-	err = DB.AutoMigrate(&models.Menu{}, &models.Order{})
+	err = DB.AutoMigrate(&models.Menu{}, &models.Order{}, &models.OrderItem{})
 	if err != nil {
 		log.Fatalf("マイグレーションに失敗しました: %v", err)
 	}

@@ -11,6 +11,7 @@ func RegisterRoutes(r *gin.Engine) {
 	{
 		orderGroup.POST("", controllers.CreateOrder)
 		orderGroup.GET("", controllers.GetOrders)
+		orderGroup.PUT("/:id/status", controllers.UpdateOrderStatus)
 	}
 }
 
