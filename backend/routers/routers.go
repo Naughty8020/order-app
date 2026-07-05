@@ -19,5 +19,7 @@ func RegisterMenuRoutes(r *gin.Engine) {
 	{
 		menuGroup.POST("", controllers.CreateMenu)
 		menuGroup.GET("", controllers.GetMenus)
+		menuGroup.PUT("/:id", controllers.UpdateMenu)
+		menuGroup.DELETE("/:id", controllers.DeleteMenu)
 	}
 }
