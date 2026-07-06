@@ -9,18 +9,12 @@ import (
 func SeedMenus() {
 	// 投入したいダミーデータのリスト
 	menus := []models.Menu{
-		{ID: 1, Name: "クラフト IPAビール (Craft IPA)", Price: 850, IsAvailable: true},
-		{ID: 2, Name: "ハートランド・ドラフト (Heartland Beer)", Price: 700, IsAvailable: true},
-		{ID: 3, Name: "特製ジントニック (Botanical Gin Tonic)", Price: 800, IsAvailable: true},
-		{ID: 4, Name: "スモーキー・モヒート (Smoky Mojito)", Price: 900, IsAvailable: true},
-		{ID: 5, Name: "エスプレッソ・マティーニ (Espresso Martini)", Price: 950, IsAvailable: true},
-		{ID: 6, Name: "自家製サングリア (Homemade Sangria)", Price: 750, IsAvailable: true},
-		{ID: 7, Name: "山崎 12年 シングルモルト (Yamazaki 12y)", Price: 1200, IsAvailable: true},
-		{ID: 8, Name: "ヴァージン・ブリーズ (Virgin Breeze - Non-Alc)", Price: 650, IsAvailable: true},
-		{ID: 9, Name: "クラフト・スパイス・コーラ (Craft Spice Cola)", Price: 600, IsAvailable: true},
-		{ID: 10, Name: "燻製ミックスナッツ (Smoked Mixed Nuts)", Price: 500, IsAvailable: true},
-		{ID: 11, Name: "トリュフ塩 of フライドポテト (Truffle French Fries)", Price: 700, IsAvailable: true},
-		{ID: 12, Name: "3種のチーズ盛り合わせ (Assorted Cheese Platter)", Price: 1000, IsAvailable: true},
+		{ID: 1, Name: "コーラ (Cola)", Price: 400, IsAvailable: true},
+		{ID: 2, Name: "ファンタグレープ (Fanta Grape)", Price: 400, IsAvailable: true},
+		{ID: 3, Name: "ファンタオレンジ (Fanta Orange)", Price: 400, IsAvailable: true},
+		{ID: 4, Name: "三ツ矢サイダー (Mitsuya Cider)", Price: 400, IsAvailable: true},
+		{ID: 5, Name: "アップルジュース (Apple Juice)", Price: 400, IsAvailable: true},
+		{ID: 6, Name: "オレンジジュース (Orange Juice)", Price: 400, IsAvailable: true},
 	}
 
 	log.Println("シードデータの投入を開始します...")
