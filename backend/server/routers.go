@@ -1,8 +1,11 @@
 package server
 
 import (
+	"order-system/handler/menu"
 	"order-system/handler/order"
+	menuDB "order-system/infra/db/menu"
 	orderDB "order-system/infra/db/order"
+	menuUsecase "order-system/usecase/menu"
 	orderUsecase "order-system/usecase/order"
 
 	"github.com/gin-contrib/cors"
@@ -15,9 +18,21 @@ func Run(db *gorm.DB) error {
 
 	r.Use(cors.Default())
 
+	menuRepo := menuDB.NewMenuRepository(db)
+	menuUC := menuUsecase.NewMenuUsecase(menuRepo)
+	menuHandler := menu.NewMenuHandler(menuUC)
+
 	orderRepo := orderDB.NewOrderRepository(db)
 	orderUC := orderUsecase.NewOrderUsecase(orderRepo)
 	orderHandler := order.NewOrderHandler(orderUC)
+
+	menuGroup := r.Group("/api/menus")
+	{
+		menuGroup.POST("", menuHandler.CreateMenu)
+		menuGroup.GET("", menuHandler.GetMenus)
+		menuGroup.PUT("/:id", menuHandler.UpdateMenu)
+		menuGroup.DELETE("/:id", menuHandler.DeleteMenu)
+	}
 
 	orderGroup := r.Group("/api/orders")
 	{
@@ -28,14 +43,3 @@ func Run(db *gorm.DB) error {
 
 	return r.Run(":8080")
 }
-
-
-// func RegisterMenuRoutes(r *gin.Engine) {
-// 	menuGroup := r.Group("/api/menus")
-// 	{
-// 		menuGroup.POST("", controllers.CreateMenu)
-// 		menuGroup.GET("", controllers.GetMenus)
-// 		menuGroup.PUT("/:id", controllers.UpdateMenu)
-// 		menuGroup.DELETE("/:id", controllers.DeleteMenu)
-// 	}
-// }
