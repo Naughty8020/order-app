@@ -95,6 +95,43 @@ func TestGetMenusHandler(t *testing.T) {
 	}
 }
 
+func TestUpdateMenuHandlerPartiallyUpdatesMenu(t *testing.T) {
+	usecase := &menuUsecaseMock{
+		updateMenuFn: func(id uint, input menuUsecase.UpdateMenuInput) (*models.Menu, error) {
+			if id != 1 {
+				t.Errorf("UpdateMenu() id = %d, want 1", id)
+			}
+			if input.Price == nil || *input.Price != 250 {
+				t.Errorf("UpdateMenu() price = %v, want 250", input.Price)
+			}
+			if input.Name != nil {
+				t.Errorf("UpdateMenu() name = %v, want nil", input.Name)
+			}
+			if input.IsAvailable != nil {
+				t.Errorf("UpdateMenu() isAvailable = %v, want nil", input.IsAvailable)
+			}
+
+			return &models.Menu{
+				ID:          id,
+				Name:        "コーラ",
+				Price:       *input.Price,
+				IsAvailable: true,
+			}, nil
+		},
+	}
+	recorder := performRequest(NewMenuHandler(usecase), http.MethodPut, "/api/menus/1", `{"price":250}`)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body = %s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+
+	var response UpdateMenuResponse
+	decodeResponse(t, recorder, &response)
+	if response.Data.ID != 1 || response.Data.Name != "コーラ" || response.Data.Price != 250 || !response.Data.IsAvailable {
+		t.Errorf("response = %+v", response)
+	}
+}
+
 func TestUpdateMenuHandlerReturnsNotFound(t *testing.T) {
 	usecase := &menuUsecaseMock{
 		updateMenuFn: func(id uint, input menuUsecase.UpdateMenuInput) (*models.Menu, error) {
