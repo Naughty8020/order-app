@@ -1,39 +1,34 @@
 package server
 
 import (
-	"net/http"
-	orderHandler "order-system/handler/order"
+	"order-system/handler/order"
 	orderDB "order-system/infra/db/order"
 	orderUsecase "order-system/usecase/order"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
 func Run(db *gorm.DB) error {
-	r := chi.NewRouter()
+	r := gin.Default()
 
+	r.Use(cors.Default())
 
-OrderRepository := orderDB.NewOrderRepository(db)
-orderUsecase := orderUsecase.NewOrderUsecase(OrderRepository)
-orderHandler := orderHandler.NewOrderHandler(orderUsecase)
+	orderRepo := orderDB.NewOrderRepository(db)
+	orderUC := orderUsecase.NewOrderUsecase(orderRepo)
+	orderHandler := order.NewOrderHandler(orderUC)
 
-	r.Route("/api/orders", func(r chi.Router) {
-		r.Post("/", orderHandler.CreateOrder)
-		r.Get("/", orderHandler.GetOrders)
-		r.Put("/{id}/status", orderHandler.UpdateOrderStatus)
-	})
+	orderGroup := r.Group("/api/orders")
+	{
+		orderGroup.POST("", orderHandler.CreateOrder)
+		orderGroup.GET("", orderHandler.GetOrders)
+		orderGroup.PUT("/:id/status", orderHandler.UpdateOrderStatus)
+	}
 
-	return http.ListenAndServe(":8080", r)
+	return r.Run(":8080")
 }
 
-// func RegisterRoutes(w http.ResponseWriter, r *http.Request) {
-// 	{
-// 		orderGroup.POST
-// 		orderGroup.GET("", controllers.GetOrders)
-// 		orderGroup.PUT("/:id/status", controllers.UpdateOrderStatus)
-// 	}
-// }
 
 // func RegisterMenuRoutes(r *gin.Engine) {
 // 	menuGroup := r.Group("/api/menus")

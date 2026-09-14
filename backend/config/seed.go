@@ -2,9 +2,11 @@ package config
 
 import (
 	"log"
+
 	"order-system/models"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // SeedMenus - メニューの初期データを投入する関数
@@ -20,17 +22,20 @@ func SeedMenus(db *gorm.DB) {
 
 	log.Println("シードデータの投入を開始します...")
 
-	log.Println("既存メニューをクリアします...")
-	if err := db.Unscoped().Where("1 = 1").Delete(&models.Menu{}).Error; err != nil {
-		log.Printf("メニューのクリアに失敗しました: %v", err)
-		return
-	}
+	err := db.Clauses(clause.OnConflict{
+		Columns: []clause.Column{
+			{Name: "id"},
+		},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"name",
+			"price",
+			"is_available",
+		}),
+	}).Create(&menus).Error
 
-	for _, menu := range menus {
-		if err := db.Create(&menu).Error; err != nil {
-			log.Printf("メニュー ID %d のシードに失敗しました: %v", menu.ID, err)
-			return
-		}
+	if err != nil {
+		log.Printf("シードデータの投入に失敗しました: %v", err)
+		return
 	}
 
 	log.Println("シードデータの投入が完了しました！")
