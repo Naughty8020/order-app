@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   frontend:
     runs-on: ubuntu-latest
@@ -23,4 +26,4 @@ jobs:
 
       - run: bun run test
 
-      - run: bun run build
+      - run: bun run build   
