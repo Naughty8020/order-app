@@ -20,17 +20,16 @@ import {
 	X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	type Cart,
+	changeCartQuantity,
+	getCartSummary,
+	type Menu,
+} from "../cart";
 
 export const Route = createFileRoute("/")({ component: App });
 
 // Interfaces
-interface Menu {
-	id: number;
-	name: string;
-	price: number;
-	is_available: boolean;
-}
-
 interface OrderItem {
 	id: number;
 	order_id: number;
@@ -45,11 +44,6 @@ interface Order {
 	status: string;
 	created_at: string;
 	order_items: OrderItem[];
-}
-
-interface CartItem {
-	menu: Menu;
-	quantity: number;
 }
 
 // Dummy Now Playing Tracks for Music Bar vibe
@@ -83,7 +77,7 @@ const TRACKS = [
 function App() {
 	const [menus, setMenus] = useState<Menu[]>([]);
 	const [orders, setOrders] = useState<Order[]>([]);
-	const [cart, setCart] = useState<{ [id: number]: CartItem }>({});
+	const [cart, setCart] = useState<Cart>({});
 	const [mode, setMode] = useState<"customer" | "staff" | "monitor">(
 		"customer",
 	);
@@ -255,23 +249,7 @@ function App() {
 
 	// Update Cart Quantity
 	const updateCartQty = (menuId: number, delta: number) => {
-		setCart((prev) => {
-			const current = prev[menuId];
-			if (!current) return prev;
-			const newQty = current.quantity + delta;
-			if (newQty <= 0) {
-				const copy = { ...prev };
-				delete copy[menuId];
-				return copy;
-			}
-			return {
-				...prev,
-				[menuId]: {
-					...current,
-					quantity: newQty,
-				},
-			};
-		});
+		setCart((prev) => changeCartQuantity(prev, menuId, delta));
 	};
 
 	// Remove from Cart
@@ -437,14 +415,7 @@ function App() {
 	};
 
 	// Helpers
-	const cartTotal = Object.values(cart).reduce(
-		(sum, item) => sum + item.menu.price * item.quantity,
-		0,
-	);
-	const cartCount = Object.values(cart).reduce(
-		(sum, item) => sum + item.quantity,
-		0,
-	);
+	const { total: cartTotal, count: cartCount } = getCartSummary(cart);
 
 	const getOrderTotal = (order: Order) => {
 		return order.order_items
