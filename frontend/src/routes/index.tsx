@@ -19,6 +19,7 @@ import {
 	Volume2,
 	X,
 } from "lucide-react";
+import QRCode from "qrcode";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	type Cart,
@@ -44,6 +45,11 @@ interface Order {
 	status: string;
 	created_at: string;
 	order_items: OrderItem[];
+}
+
+interface OrderSession {
+	token: string;
+	expiresAt: string;
 }
 
 // Dummy Now Playing Tracks for Music Bar vibe
@@ -84,6 +90,18 @@ function App() {
 	const [activeCategory, _setActiveCategory] = useState<string>("all");
 	const [loading, setLoading] = useState<boolean>(true);
 	const [error, setError] = useState<string | null>(null);
+	const [orderSession, setOrderSession] = useState<OrderSession | null>(null);
+	const [orderAccessStatus, setOrderAccessStatus] = useState<
+		"checking" | "valid" | "missing" | "invalid"
+	>("checking");
+	const [staffKey, setStaffKey] = useState(() =>
+		typeof window === "undefined"
+			? ""
+			: window.sessionStorage.getItem("staff_access_key") || "",
+	);
+	const [qrImage, setQrImage] = useState("");
+	const [qrExpiresAt, setQrExpiresAt] = useState("");
+	const [qrLoading, setQrLoading] = useState(false);
 
 	// Staff Mode States
 	const [newMenuName, setNewMenuName] = useState("");
@@ -120,6 +138,60 @@ function App() {
 		return "http://localhost:8080/api";
 	};
 	const API_BASE = getApiBase();
+
+	useEffect(() => {
+		const exchangeOrderToken = async () => {
+			const params = new URLSearchParams(window.location.search);
+			const qrToken = params.get("order_token");
+
+			if (!qrToken) {
+				const saved = window.sessionStorage.getItem("order_session");
+				if (saved) {
+					try {
+						const session = JSON.parse(saved) as OrderSession;
+						if (new Date(session.expiresAt).getTime() > Date.now()) {
+							setOrderSession(session);
+							setOrderAccessStatus("valid");
+							return;
+						}
+					} catch {
+						// Invalid stored data is discarded below.
+					}
+					window.sessionStorage.removeItem("order_session");
+				}
+				setOrderAccessStatus("missing");
+				return;
+			}
+
+			try {
+				const response = await fetch(
+					`${API_BASE}/order-access/session?token=${encodeURIComponent(qrToken)}`,
+					{ method: "POST" },
+				);
+				if (!response.ok) throw new Error("invalid QR token");
+				const data = await response.json();
+				const session = {
+					token: data.session_token as string,
+					expiresAt: data.expires_at as string,
+				};
+				window.sessionStorage.setItem("order_session", JSON.stringify(session));
+				setOrderSession(session);
+				setOrderAccessStatus("valid");
+
+				params.delete("order_token");
+				const query = params.toString();
+				window.history.replaceState(
+					{},
+					"",
+					`${window.location.pathname}${query ? `?${query}` : ""}`,
+				);
+			} catch {
+				setOrderAccessStatus("invalid");
+			}
+		};
+
+		void exchangeOrderToken();
+	}, [API_BASE]);
 
 	const showToast = useCallback(
 		(message: string, type: "success" | "error" | "info" = "success") => {
@@ -265,6 +337,14 @@ function App() {
 	const submitOrder = async () => {
 		const items = Object.values(cart);
 		if (items.length === 0) return;
+		if (
+			!orderSession ||
+			new Date(orderSession.expiresAt).getTime() <= Date.now()
+		) {
+			setOrderAccessStatus("invalid");
+			showToast("注文用QRコードをもう一度読み取ってください", "error");
+			return;
+		}
 
 		setLoading(true);
 		try {
@@ -277,14 +357,17 @@ function App() {
 
 			const response = await fetch(`${API_BASE}/orders`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					"X-Order-Session": orderSession.token,
+				},
 				body: JSON.stringify(payload),
 			});
 
 			if (response.ok) {
 				const resData = await response.json();
-				if (resData.order?.id) {
-					setSuccessModal({ show: true, orderId: resData.order.id });
+				if (resData.id) {
+					setSuccessModal({ show: true, orderId: resData.id });
 				} else {
 					showToast(
 						"注文は完了しましたが、オーダー番号を取得できませんでした。",
@@ -298,6 +381,11 @@ function App() {
 				setOrders(orderData.orders || []);
 			} else {
 				const errorData = await response.json();
+				if (response.status === 401) {
+					window.sessionStorage.removeItem("order_session");
+					setOrderSession(null);
+					setOrderAccessStatus("invalid");
+				}
 				showToast(errorData.error || "注文の送信に失敗しました", "error");
 			}
 		} catch (err) {
@@ -307,6 +395,46 @@ function App() {
 			setLoading(false);
 		}
 	};
+
+	const generateOrderQR = useCallback(async () => {
+		if (!staffKey) {
+			showToast("スタッフキーを入力してください", "error");
+			return;
+		}
+
+		setQrLoading(true);
+		try {
+			const response = await fetch(`${API_BASE}/order-access/qr`, {
+				headers: { "X-Staff-Key": staffKey },
+			});
+			if (!response.ok) throw new Error("スタッフキーが正しくありません");
+			const data = await response.json();
+			const orderURL = new URL(window.location.origin);
+			orderURL.searchParams.set("order_token", data.token);
+			setQrImage(
+				await QRCode.toDataURL(orderURL.toString(), { width: 280, margin: 2 }),
+			);
+			setQrExpiresAt(data.expires_at);
+			window.sessionStorage.setItem("staff_access_key", staffKey);
+		} catch (err) {
+			showToast(
+				err instanceof Error ? err.message : "QRコードの発行に失敗しました",
+				"error",
+			);
+		} finally {
+			setQrLoading(false);
+		}
+	}, [API_BASE, showToast, staffKey]);
+
+	useEffect(() => {
+		if (!qrImage || !qrExpiresAt || !staffKey) return;
+		const delay = Math.max(
+			new Date(qrExpiresAt).getTime() - Date.now() + 1000,
+			1000,
+		);
+		const timer = window.setTimeout(() => void generateOrderQR(), delay);
+		return () => window.clearTimeout(timer);
+	}, [generateOrderQR, qrExpiresAt, qrImage, staffKey]);
 
 	// Staff: Update Order Status
 	const handleUpdateStatus = async (orderId: number, status: string) => {
@@ -706,6 +834,18 @@ function App() {
 				{/* ===== 1. CUSTOMER MODE ===== */}
 				{mode === "customer" && (
 					<div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
+						{orderAccessStatus !== "valid" && (
+							<div className="lg:col-span-2 bg-amber-950/40 border border-amber-500/30 rounded-2xl p-4 text-amber-200">
+								<p className="font-bold">
+									店頭の注文用QRコードを読み取ってください
+								</p>
+								<p className="text-xs text-amber-300/70 mt-1">
+									{orderAccessStatus === "checking"
+										? "注文セッションを確認しています…"
+										: "QRコードは10分ごとに更新されます。期限切れの場合は、最新のQRコードを読み取ってください。"}
+								</p>
+							</div>
+						)}
 						{/* Menu Grid */}
 						<div>
 							{loading && menus.length === 0 ? (
@@ -1000,7 +1140,7 @@ function App() {
 										<button
 											type="button"
 											onClick={submitOrder}
-											disabled={loading}
+											disabled={loading || orderAccessStatus !== "valid"}
 											className="w-full mt-5 bg-gradient-to-br from-[#ec4899] to-[#db2777] hover:opacity-90 text-white font-extrabold py-3.5 rounded-[12px] shadow-[0_4px_20px_rgba(236,72,153,0.35)] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-[14px] cursor-pointer"
 										>
 											{loading ? (
@@ -1024,6 +1164,50 @@ function App() {
 				{/* ===== 2. STAFF MODE ===== */}
 				{mode === "staff" && (
 					<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+						<div className="lg:col-span-3 bg-[#14141e]/60 border border-emerald-500/20 rounded-2xl p-6">
+							<h2 className="text-lg font-bold text-white">
+								店頭注文用QRコード
+							</h2>
+							<p className="text-xs text-zinc-400 mt-1 mb-4">
+								QRコードは10分ごとに変わります。期限が来たら再発行してください。
+							</p>
+							<div className="flex flex-col md:flex-row gap-5 items-start">
+								<div className="flex-1 w-full">
+									<label className="text-xs text-zinc-400" htmlFor="staff-key">
+										スタッフキー
+									</label>
+									<div className="flex gap-2 mt-2">
+										<input
+											id="staff-key"
+											type="password"
+											value={staffKey}
+											onChange={(event) => setStaffKey(event.target.value)}
+											className="flex-1 bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm"
+										/>
+										<button
+											type="button"
+											onClick={generateOrderQR}
+											disabled={qrLoading}
+											className="bg-emerald-600 px-4 py-2 rounded-xl font-bold text-sm disabled:opacity-50"
+										>
+											{qrLoading ? "発行中…" : "QRを発行"}
+										</button>
+									</div>
+								</div>
+								{qrImage && (
+									<div className="bg-white p-3 rounded-xl text-center">
+										<img
+											src={qrImage}
+											alt="注文ページを開くQRコード"
+											className="w-56 h-56"
+										/>
+										<p className="text-[11px] text-zinc-700 mt-2">
+											有効期限: {new Date(qrExpiresAt).toLocaleTimeString()}
+										</p>
+									</div>
+								)}
+							</div>
+						</div>
 						<div className="lg:col-span-2 space-y-6">
 							<div className="bg-[#14141e]/40 border border-white/8 rounded-[16px] p-6 backdrop-blur-sm">
 								<div className="flex justify-between items-center mb-6">

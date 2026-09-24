@@ -1,10 +1,16 @@
 package server
 
 import (
+	"errors"
+	"os"
+	"strings"
+
 	"order-system/handler/menu"
 	"order-system/handler/order"
+	orderAccessHandler "order-system/handler/orderaccess"
 	menuDB "order-system/infra/db/menu"
 	orderDB "order-system/infra/db/order"
+	"order-system/security/orderaccess"
 	menuUsecase "order-system/usecase/menu"
 	orderUsecase "order-system/usecase/order"
 
@@ -14,9 +20,26 @@ import (
 )
 
 func Run(db *gorm.DB) error {
-	r := gin.Default()
+	accessSecret := os.Getenv("ORDER_ACCESS_SECRET")
+	staffKey := os.Getenv("STAFF_ACCESS_KEY")
+	if accessSecret == "" || staffKey == "" {
+		return errors.New("ORDER_ACCESS_SECRET and STAFF_ACCESS_KEY must be set")
+	}
 
-	r.Use(cors.Default())
+	r := gin.Default()
+	allowedOrigins := []string{"http://localhost:3000"}
+	if configured := os.Getenv("FRONTEND_ORIGINS"); configured != "" {
+		allowedOrigins = strings.Split(configured, ",")
+	}
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins: allowedOrigins,
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{"Origin", "Content-Type", "X-Order-Session", "X-Staff-Key"},
+	}))
+
+	accessManager := orderaccess.NewManager(accessSecret)
+	accessHandler := orderAccessHandler.NewHandler(accessManager, staffKey)
 
 	menuRepo := menuDB.NewMenuRepository(db)
 	menuUC := menuUsecase.NewMenuUsecase(menuRepo)
@@ -36,9 +59,15 @@ func Run(db *gorm.DB) error {
 
 	orderGroup := r.Group("/api/orders")
 	{
-		orderGroup.POST("", orderHandler.CreateOrder)
+		orderGroup.POST("", accessHandler.RequireOrderSession, orderHandler.CreateOrder)
 		orderGroup.GET("", orderHandler.GetOrders)
 		orderGroup.PUT("/:id/status", orderHandler.UpdateOrderStatus)
+	}
+
+	accessGroup := r.Group("/api/order-access")
+	{
+		accessGroup.GET("/qr", accessHandler.GetQRToken)
+		accessGroup.POST("/session", accessHandler.CreateSession)
 	}
 
 	return r.Run(":8080")
