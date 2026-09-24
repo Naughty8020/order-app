@@ -21,9 +21,8 @@ import (
 
 func Run(db *gorm.DB) error {
 	accessSecret := os.Getenv("ORDER_ACCESS_SECRET")
-	staffKey := os.Getenv("STAFF_ACCESS_KEY")
-	if accessSecret == "" || staffKey == "" {
-		return errors.New("ORDER_ACCESS_SECRET and STAFF_ACCESS_KEY must be set")
+	if accessSecret == "" {
+		return errors.New("ORDER_ACCESS_SECRET must be set")
 	}
 
 	r := gin.Default()
@@ -35,11 +34,11 @@ func Run(db *gorm.DB) error {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: allowedOrigins,
 		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders: []string{"Origin", "Content-Type", "X-Order-Session", "X-Staff-Key"},
+		AllowHeaders: []string{"Origin", "Content-Type", "X-Order-Session"},
 	}))
 
 	accessManager := orderaccess.NewManager(accessSecret)
-	accessHandler := orderAccessHandler.NewHandler(accessManager, staffKey)
+	accessHandler := orderAccessHandler.NewHandler(accessManager)
 
 	menuRepo := menuDB.NewMenuRepository(db)
 	menuUC := menuUsecase.NewMenuUsecase(menuRepo)

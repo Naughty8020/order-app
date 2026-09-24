@@ -1,7 +1,6 @@
 package orderaccess
 
 import (
-	"crypto/subtle"
 	"net/http"
 	"time"
 
@@ -11,21 +10,14 @@ import (
 )
 
 type Handler struct {
-	manager  *orderaccess.Manager
-	staffKey string
+	manager *orderaccess.Manager
 }
 
-func NewHandler(manager *orderaccess.Manager, staffKey string) *Handler {
-	return &Handler{manager: manager, staffKey: staffKey}
+func NewHandler(manager *orderaccess.Manager) *Handler {
+	return &Handler{manager: manager}
 }
 
 func (h *Handler) GetQRToken(c *gin.Context) {
-	providedKey := c.GetHeader("X-Staff-Key")
-	if subtle.ConstantTimeCompare([]byte(providedKey), []byte(h.staffKey)) != 1 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid staff key"})
-		return
-	}
-
 	token, expiresAt := h.manager.CurrentQRToken()
 	c.JSON(http.StatusOK, gin.H{
 		"token":      token,

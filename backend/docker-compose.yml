@@ -15,7 +15,6 @@ services:
       - DB_PORT=3306
       - DB_NAME=order_system_db
       - ORDER_ACCESS_SECRET=replace-with-a-long-random-secret
-      - STAFF_ACCESS_KEY=replace-with-a-staff-only-key
       - FRONTEND_ORIGINS=http://localhost:3000
     depends_on:
       db:

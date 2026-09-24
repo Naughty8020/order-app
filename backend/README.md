@@ -9,13 +9,12 @@ todo
 起動前に次の環境変数を設定します。
 
 - `ORDER_ACCESS_SECRET`: QRコードへ署名する長いランダム文字列
-- `STAFF_ACCESS_KEY`: スタッフ画面でQRコードを発行するためのキー
 - `FRONTEND_ORIGINS`: 許可するフロントエンドURL（カンマ区切り）
 
 スマートフォンからLAN内のフロントエンドを開く場合は、例えば
 `FRONTEND_ORIGINS=http://192.168.1.10:3000` のように実際のURLを指定します。
 
-1. スタッフ画面に `STAFF_ACCESS_KEY` を入力してQRコードを発行する
+1. フロントエンドを開くとQRコードが自動発行される
 2. 客がQRコードを読み取る
 3. フロントエンドが10分有効のQRトークンを注文セッションへ交換する
 4. 注文時に `X-Order-Session` Headerを送信する

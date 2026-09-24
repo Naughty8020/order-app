@@ -94,11 +94,6 @@ function App() {
 	const [orderAccessStatus, setOrderAccessStatus] = useState<
 		"checking" | "valid" | "missing" | "invalid"
 	>("checking");
-	const [staffKey, setStaffKey] = useState(() =>
-		typeof window === "undefined"
-			? ""
-			: window.sessionStorage.getItem("staff_access_key") || "",
-	);
 	const [qrImage, setQrImage] = useState("");
 	const [qrExpiresAt, setQrExpiresAt] = useState("");
 	const [qrLoading, setQrLoading] = useState(false);
@@ -397,17 +392,10 @@ function App() {
 	};
 
 	const generateOrderQR = useCallback(async () => {
-		if (!staffKey) {
-			showToast("スタッフキーを入力してください", "error");
-			return;
-		}
-
 		setQrLoading(true);
 		try {
-			const response = await fetch(`${API_BASE}/order-access/qr`, {
-				headers: { "X-Staff-Key": staffKey },
-			});
-			if (!response.ok) throw new Error("スタッフキーが正しくありません");
+			const response = await fetch(`${API_BASE}/order-access/qr`);
+			if (!response.ok) throw new Error("QRコードの発行に失敗しました");
 			const data = await response.json();
 			const orderURL = new URL(window.location.origin);
 			orderURL.searchParams.set("order_token", data.token);
@@ -415,7 +403,6 @@ function App() {
 				await QRCode.toDataURL(orderURL.toString(), { width: 280, margin: 2 }),
 			);
 			setQrExpiresAt(data.expires_at);
-			window.sessionStorage.setItem("staff_access_key", staffKey);
 		} catch (err) {
 			showToast(
 				err instanceof Error ? err.message : "QRコードの発行に失敗しました",
@@ -424,17 +411,21 @@ function App() {
 		} finally {
 			setQrLoading(false);
 		}
-	}, [API_BASE, showToast, staffKey]);
+	}, [API_BASE, showToast]);
 
 	useEffect(() => {
-		if (!qrImage || !qrExpiresAt || !staffKey) return;
+		if (!qrImage) void generateOrderQR();
+	}, [generateOrderQR, qrImage]);
+
+	useEffect(() => {
+		if (!qrImage || !qrExpiresAt) return;
 		const delay = Math.max(
 			new Date(qrExpiresAt).getTime() - Date.now() + 1000,
 			1000,
 		);
 		const timer = window.setTimeout(() => void generateOrderQR(), delay);
 		return () => window.clearTimeout(timer);
-	}, [generateOrderQR, qrExpiresAt, qrImage, staffKey]);
+	}, [generateOrderQR, qrExpiresAt, qrImage]);
 
 	// Staff: Update Order Status
 	const handleUpdateStatus = async (orderId: number, status: string) => {
@@ -1169,43 +1160,29 @@ function App() {
 								店頭注文用QRコード
 							</h2>
 							<p className="text-xs text-zinc-400 mt-1 mb-4">
-								QRコードは10分ごとに変わります。期限が来たら再発行してください。
+								QRコードは常時表示され、10分ごとに自動更新されます。
 							</p>
-							<div className="flex flex-col md:flex-row gap-5 items-start">
-								<div className="flex-1 w-full">
-									<label className="text-xs text-zinc-400" htmlFor="staff-key">
-										スタッフキー
-									</label>
-									<div className="flex gap-2 mt-2">
-										<input
-											id="staff-key"
-											type="password"
-											value={staffKey}
-											onChange={(event) => setStaffKey(event.target.value)}
-											className="flex-1 bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-sm"
-										/>
-										<button
-											type="button"
-											onClick={generateOrderQR}
-											disabled={qrLoading}
-											className="bg-emerald-600 px-4 py-2 rounded-xl font-bold text-sm disabled:opacity-50"
-										>
-											{qrLoading ? "発行中…" : "QRを発行"}
-										</button>
-									</div>
-								</div>
-								{qrImage && (
-									<div className="bg-white p-3 rounded-xl text-center">
-										<img
-											src={qrImage}
-											alt="注文ページを開くQRコード"
-											className="w-56 h-56"
-										/>
-										<p className="text-[11px] text-zinc-700 mt-2">
-											有効期限: {new Date(qrExpiresAt).toLocaleTimeString()}
+							<div className="flex justify-center">
+								<div className="bg-white p-3 rounded-xl text-center min-w-56 min-h-64 flex flex-col items-center justify-center">
+									{qrImage ? (
+										<>
+											<img
+												src={qrImage}
+												alt="注文ページを開くQRコード"
+												className="w-56 h-56"
+											/>
+											<p className="text-[11px] text-zinc-700 mt-2">
+												有効期限: {new Date(qrExpiresAt).toLocaleTimeString()}
+											</p>
+										</>
+									) : (
+										<p className="text-sm text-zinc-700 px-4">
+											{qrLoading
+												? "QRコードを発行中…"
+												: "QRコードを取得できませんでした"}
 										</p>
-									</div>
-								)}
+									)}
+								</div>
 							</div>
 						</div>
 						<div className="lg:col-span-2 space-y-6">
@@ -1485,6 +1462,19 @@ function App() {
 				{/* ===== 3. MONITOR SCREEN ===== */}
 				{mode === "monitor" && (
 					<div className="bg-[rgba(10,10,18,0.8)] border border-[rgba(255,255,255,0.08)] rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden min-h-[75vh] backdrop-blur-xl">
+						<div className="absolute top-6 right-6 z-20 bg-white p-2 rounded-xl shadow-xl">
+							{qrImage ? (
+								<img
+									src={qrImage}
+									alt="注文ページを開くQRコード"
+									className="w-28 h-28 md:w-36 md:h-36"
+								/>
+							) : (
+								<div className="w-28 h-28 md:w-36 md:h-36 flex items-center justify-center text-center text-xs text-zinc-700 p-3">
+									{qrLoading ? "QR発行中…" : "QRを取得できませんでした"}
+								</div>
+							)}
+						</div>
 						<div className="flex flex-col md:flex-row justify-between items-center border-b border-[rgba(255,255,255,0.08)] pb-8 mb-10 gap-6">
 							<div>
 								<span className="text-[11px] tracking-[0.3em] font-black uppercase text-[#f472b6] bg-pink-950/50 border border-[rgba(236,72,153,0.4)] px-4 py-1.5 rounded-full shadow-[0_0_15px_rgba(236,72,153,0.15)]">
