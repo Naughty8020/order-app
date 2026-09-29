@@ -10,9 +10,10 @@ import (
 	orderAccessHandler "order-system/handler/orderaccess"
 	menuDB "order-system/infra/db/menu"
 	orderDB "order-system/infra/db/order"
-	"order-system/security/orderaccess"
+	orderSessionDB "order-system/infra/db/ordersession"
 	menuUsecase "order-system/usecase/menu"
 	orderUsecase "order-system/usecase/order"
+	orderSessionUsecase "order-system/usecase/ordersession"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -37,8 +38,14 @@ func Run(db *gorm.DB) error {
 		AllowHeaders: []string{"Origin", "Content-Type", "X-Order-Session"},
 	}))
 
-	accessManager := orderaccess.NewManager(accessSecret)
-	accessHandler := orderAccessHandler.NewHandler(accessManager)
+	sessionRepo := orderSessionDB.NewOrderSessionRepository(db)
+
+	accessUC := orderSessionUsecase.NewOrderAccessUsecase(
+		sessionRepo,
+		accessSecret,
+	)
+
+	accessHandler := orderAccessHandler.NewHandler(accessUC)
 
 	menuRepo := menuDB.NewMenuRepository(db)
 	menuUC := menuUsecase.NewMenuUsecase(menuRepo)

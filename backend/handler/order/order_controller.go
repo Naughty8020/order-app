@@ -37,7 +37,7 @@ func (h *orderHandlerImpl) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	if len(req.Items) == 0{
+	if len(req.Items) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "items is required",
 		})
