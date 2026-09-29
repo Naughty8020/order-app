@@ -17,6 +17,7 @@ type OrderAccessUsecase interface {
 	CurrentQRToken() (string, time.Time)
 	ExchangeQRToken(qrToken string) (string, time.Time, error)
 	ConsumeOrder(sessionToken string) error
+	DeleteExpiredSessions() error
 }
 
 type orderAccessUsecase struct {
@@ -131,6 +132,10 @@ func (u *orderAccessUsecase) ConsumeOrder(
 	return nil
 }
 
+func (u *orderAccessUsecase) DeleteExpiredSessions() error {
+	return u.repo.DeleteExpired()
+}
+
 func (u *orderAccessUsecase) validateQRToken(token string) bool {
 	parts := strings.Split(token, ".")
 	if len(parts) != 2 {
@@ -183,3 +188,4 @@ func hashToken(token string) string {
 
 	return base64.RawURLEncoding.EncodeToString(hash[:])
 }
+

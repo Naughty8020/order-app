@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"strings"
+	"time"
 
 	"order-system/handler/menu"
 	"order-system/handler/order"
@@ -44,6 +45,14 @@ func Run(db *gorm.DB) error {
 		sessionRepo,
 		accessSecret,
 	)
+
+	go func() {
+	ticker := time.NewTicker(10 * time.Minute)
+
+	for range ticker.C {
+		accessUC.DeleteExpiredSessions()
+	}
+}()
 
 	accessHandler := orderAccessHandler.NewHandler(accessUC)
 
