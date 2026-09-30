@@ -1,6 +1,11 @@
 package repository
 
-import "order-system/models"
+import (
+	"errors"
+	"order-system/models"
+)
+
+var ErrNotFound = errors.New("not found")
 
 type OrderSessionRepository interface {
 	Create(session *models.OrderSession) error

@@ -11,8 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type OrderAccessUsecase interface {
@@ -106,10 +104,10 @@ func (u *orderAccessUsecase) ConsumeOrder(
 
 	session, err := u.repo.FindByTokenHash(tokenHash)
 
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	if errors.Is(err, repository.ErrNotFound) {
 		return ErrInvalidSession
 	}
-	
+
 	if err != nil {
 		return err
 	}

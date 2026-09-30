@@ -1,6 +1,7 @@
 package orderaccess
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -47,9 +48,16 @@ func (h *Handler) RequireOrderSession(c *gin.Context) {
 		})
 		return
 	}
-	if err != nil {
+	if errors.Is(err, ordersession.ErrInvalidSession) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 			"error": "a valid order session is required",
+		})
+		return
+	}
+
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"error": "internal server error",
 		})
 		return
 	}

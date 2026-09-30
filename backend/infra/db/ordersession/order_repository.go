@@ -1,6 +1,8 @@
 package ordersession
 
 import (
+	"errors"
+	"order-system/domain/repository"
 	"order-system/models"
 
 	"gorm.io/gorm"
@@ -26,6 +28,11 @@ func (r *orderSessionRepository) FindByTokenHash(tokenHash string) (*models.Orde
 	var session models.OrderSession
 
 	err := r.db.Where("token_hash = ?", tokenHash).First(&session).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, repository.ErrNotFound
+	}
+	
 	if err != nil {
 		return nil, err
 	}
