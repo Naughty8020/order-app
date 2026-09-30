@@ -27,8 +27,13 @@ func (h *Handler) GetQRToken(c *gin.Context) {
 }
 
 func (h *Handler) CreateSession(c *gin.Context) {
-	token := c.Query("token")
-	sessionToken, expiresAt, err := h.usecase.ExchangeQRToken(token)
+	var req struct {
+		Token string `json:"token" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		return
+	}
+	sessionToken, expiresAt, err := h.usecase.ExchangeQRToken(req.Token)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired QR token"})
 		return
