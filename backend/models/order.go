@@ -15,5 +15,5 @@ type OrderItem struct {
 	MenuID   uint `gorm:"not null" json:"menu_id"`
 	Menu     Menu `gorm:"foreignKey:MenuID" json:"menu"`
 	Quantity int  `gorm:"not null;default:1" json:"quantity"`
-	Price    int  `gorm:"not null" json:"price"` // 注文時点の単価
+	Price    int  `gorm:"not null" json:"price"`
 }

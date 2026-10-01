@@ -16,6 +16,10 @@ import (
 	orderUsecase "order-system/usecase/order"
 	orderSessionUsecase "order-system/usecase/ordersession"
 
+	userHandler "order-system/handler/user"
+	userDB "order-system/infra/db/user"
+	userUsecase "order-system/usecase/user"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -69,6 +73,10 @@ func Run(db *gorm.DB) error {
 	orderUC := orderUsecase.NewOrderUsecase(orderRepo)
 	orderHandler := order.NewOrderHandler(orderUC)
 
+	userRepo := userDB.NewUserRepository(db)
+	userUC := userUsecase.NewUserUsecase(userRepo)
+	loginHandler := userHandler.NewUserHandler(userUC)
+
 	menuGroup := r.Group("/api/menus")
 	{
 		menuGroup.POST("", menuHandler.CreateMenu)
@@ -89,6 +97,6 @@ func Run(db *gorm.DB) error {
 		accessGroup.GET("/qr", accessHandler.GetQRToken)
 		accessGroup.POST("/session", accessHandler.CreateSession)
 	}
-
+    r.POST("/api/login", loginHandler.Login)
 	return r.Run(":8080")
 }
