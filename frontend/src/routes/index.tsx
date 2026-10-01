@@ -5,9 +5,7 @@ import {
 	Check,
 	CheckCircle2,
 	Clock,
-	Disc,
 	Minus,
-	Music,
 	Plus,
 	PlusCircle,
 	RotateCw,
@@ -53,33 +51,7 @@ interface OrderSession {
 	expiresAt: string;
 }
 
-// Dummy Now Playing Tracks for Music Bar vibe
-const TRACKS = [
-	{
-		title: "Midnight Horizon",
-		artist: "DJ Neon Shimmer",
-		genre: "Deep House",
-		bpm: 124,
-	},
-	{
-		title: "Lost in Echoes",
-		artist: "Lofi Dreamer",
-		genre: "Chillhop",
-		bpm: 82,
-	},
-	{
-		title: "Liquid Sunshine",
-		artist: "Groove Syndicate",
-		genre: "Nu-Jazz",
-		bpm: 115,
-	},
-	{
-		title: "Neon Reflections",
-		artist: "Synthwave Rider",
-		genre: "Retrowave",
-		bpm: 110,
-	},
-];
+
 
 function App() {
 	const [menus, setMenus] = useState<Menu[]>([]);
@@ -105,9 +77,7 @@ function App() {
 	const [newMenuPrice, setNewMenuPrice] = useState("");
 	const [submittingMenu, setSubmittingMenu] = useState(false);
 
-	// Music Simulator
-	const [trackIndex, setTrackIndex] = useState(0);
-	const [isPlaying] = useState(true);
+
 
 	// Order Success Modal State
 	const [successModal, setSuccessModal] = useState<{
@@ -551,8 +521,6 @@ function App() {
 			? order.order_items.reduce((sum, item) => sum + item.quantity, 0)
 			: 0;
 	};
-
-	const activeTrack = TRACKS[trackIndex];
 
 	// Filter orders for Monitor Screen
 	const preparingOrders = orders.filter((o) => o.status === "pending");
@@ -1017,8 +985,10 @@ function App() {
 
 							{/* Mobile Overlay */}
 							{isCartOpen && (
-								<div
-									className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+								<button
+									type="button"
+									aria-label="カートを閉じる"
+									className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity w-full h-full border-none cursor-pointer"
 									onClick={() => setIsCartOpen(false)}
 								/>
 							)}
@@ -1032,8 +1002,10 @@ function App() {
 							>
 								<div className="bg-[rgba(20,20,30,0.95)] lg:bg-[rgba(20,20,30,0.6)] border border-[rgba(255,255,255,0.08)] rounded-[24px] lg:rounded-[18px] p-6 pb-8 lg:pb-6 backdrop-blur-xl shadow-[0_-10px_40px_rgba(0,0,0,0.4)] lg:shadow-none lg:sticky lg:top-6 flex flex-col h-fit max-h-[85vh] lg:max-h-none pointer-events-auto">
 									{/* Mobile Close Handle */}
-									<div 
-										className="lg:hidden w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-4 cursor-pointer" 
+									<button 
+										type="button"
+										aria-label="カートを閉じる"
+										className="lg:hidden w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-4 cursor-pointer block border-none" 
 										onClick={() => setIsCartOpen(false)}
 									/>
 									
