@@ -52,6 +52,12 @@ interface CartItem {
 	quantity: number;
 }
 
+interface Space {
+	id: number;
+	name: string;
+	status: "available" | "in_use" | "preparing";
+}
+
 // Dummy Now Playing Tracks for Music Bar vibe
 const TRACKS = [
 	{
@@ -84,10 +90,15 @@ function App() {
 	const [menus, setMenus] = useState<Menu[]>([]);
 	const [orders, setOrders] = useState<Order[]>([]);
 	const [cart, setCart] = useState<{ [id: number]: CartItem }>({});
+	const [spaces, setSpaces] = useState<Space[]>([
+		{ id: 1, name: "麻雀卓 (1卓)", status: "available" },
+		{ id: 2, name: "ゲームブース (Switch)", status: "available" },
+		{ id: 3, name: "ゲームブース (トランプ)", status: "available" },
+	]);
 	const [mode, setMode] = useState<"customer" | "staff" | "monitor">(
 		"customer",
 	);
-	const [activeCategory, _setActiveCategory] = useState<string>("all");
+	const [activeCategory, setActiveCategory] = useState<string>("all");
 	const [loading, setLoading] = useState<boolean>(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -230,8 +241,21 @@ function App() {
 	}, [isPlaying]);
 
 	// Category classifier
-	const getCategory = (_menuName: string): string => {
-		return "non-alc";
+	const getCategory = (menuName: string): string => {
+		if (
+			menuName.includes("カシスオレンジ") ||
+			menuName.includes("ジントニック") ||
+			menuName.includes("モスコミュール") ||
+			menuName.includes("カクテル") ||
+			menuName.includes("Cocktail") ||
+			menuName.includes("シャーリーテンプル") ||
+			menuName.includes("フルーツサイダーポンチ") ||
+			menuName.includes("オレンジグレープフィズ") ||
+			menuName.includes("サンライズ風モクテル")
+		) {
+			return "cocktail";
+		}
+		return "soft_drink";
 	};
 
 	// Add to Cart
@@ -436,6 +460,17 @@ function App() {
 		}
 	};
 
+	// Staff: Update Space Status
+	const handleUpdateSpaceStatus = (
+		id: number,
+		status: "available" | "in_use" | "preparing",
+	) => {
+		setSpaces((prev) =>
+			prev.map((s) => (s.id === id ? { ...s, status } : s)),
+		);
+		showToast(`スペースのステータスを更新しました`);
+	};
+
 	// Helpers
 	const cartTotal = Object.values(cart).reduce(
 		(sum, item) => sum + item.menu.price * item.quantity,
@@ -485,6 +520,16 @@ function App() {
 		if (name.includes("三ツ矢サイダー")) return "Mitsuya Cider";
 		if (name.includes("アップルジュース")) return "Apple Juice";
 		if (name.includes("オレンジジュース")) return "Orange Juice";
+		return "";
+	};
+
+	// Description mapping
+	const getDrinkDescription = (name: string) => {
+		if (name.includes("シャーリーテンプル")) return "コーラ＋オレンジジュース";
+		if (name.includes("フルーツサイダーポンチ")) return "三ツ矢サイダー＋アップルジュース＋オレンジジュース";
+		if (name.includes("オレンジグレープフィズ")) return "ファンタオレンジ＋ファンタグレープ";
+		if (name.includes("サンライズ風モクテル")) return "オレンジジュース＋ファンタグレープ";
+	
 		return "";
 	};
 
@@ -735,8 +780,71 @@ function App() {
 				{/* ===== 1. CUSTOMER MODE ===== */}
 				{mode === "customer" && (
 					<div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
-						{/* Menu Grid */}
+						{/* First Column: Spaces & Menus */}
 						<div>
+							{/* Play Spaces Availability */}
+							<section className="mb-8 bg-[rgba(20,20,30,0.6)] border border-[rgba(255,255,255,0.08)] rounded-[16px] p-6 backdrop-blur-sm">
+								<h2 className="text-[16px] font-bold text-white flex items-center gap-2 mb-4">
+									<Sparkles size={16} className="text-[#f472b6]" />
+									遊技スペース利用状況
+								</h2>
+								<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+									{spaces.map((space) => (
+										<div
+											key={space.id}
+											className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-4 flex flex-col items-center justify-center gap-2 text-center"
+										>
+											<span className="text-[13px] font-bold text-white">
+												{space.name}
+											</span>
+											{space.status === "available" && (
+												<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-emerald-950/40 border border-emerald-500/30 text-emerald-400">
+													<span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+													空き
+												</span>
+											)}
+											{space.status === "in_use" && (
+												<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-rose-950/40 border border-rose-500/30 text-rose-400">
+													<span className="h-2 w-2 rounded-full bg-rose-400" />
+													使用中
+												</span>
+											)}
+											{space.status === "preparing" && (
+												<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-950/40 border border-amber-500/30 text-amber-400">
+													<span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+													準備中
+												</span>
+											)}
+										</div>
+									))}
+								</div>
+							</section>
+
+							{/* Menu Categories */}
+							<div className="flex items-center gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+								{[
+									{ id: "all", label: "すべて", icon: "🍹" },
+									{ id: "soft_drink", label: "ソフトドリンク", icon: "🥤" },
+									{ id: "cocktail", label: "カクテル", icon: "🍸" },
+								].map((cat) => (
+									<button
+										key={cat.id}
+										type="button"
+										onClick={() => setActiveCategory(cat.id)}
+										className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition whitespace-nowrap cursor-pointer
+											${
+												activeCategory === cat.id
+													? "bg-gradient-to-br from-[#ec4899] to-[#db2777] text-white shadow-[0_4px_16px_rgba(236,72,153,0.35)] border-none"
+													: "bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.1)] text-[#a1a1aa] hover:bg-[rgba(255,255,255,0.08)] hover:text-white"
+											}`}
+									>
+										<span>{cat.icon}</span>
+										{cat.label}
+									</button>
+								))}
+							</div>
+
+							{/* Menu Grid */}
 							{loading && menus.length === 0 ? (
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 									{[1, 2, 3, 4].map((n) => (
@@ -758,6 +866,7 @@ function App() {
 											const inCart = cart[menu.id];
 											const emoji = getDrinkEmoji(menu.name);
 											const englishName = getDrinkEnglish(menu.name);
+											const description = getDrinkDescription(menu.name);
 											const iconBg = getDrinkIconBg(menu.name);
 											const isFeatured = index === 1; // second item featured like mockup
 											return (
@@ -784,8 +893,13 @@ function App() {
 														{menu.name.split(" (")[0]}
 													</h3>
 													{englishName && (
-														<p className="text-xs text-[#71717a] mb-[14px]">
+														<p className={`text-xs text-[#71717a] ${description ? 'mb-1' : 'mb-[14px]'}`}>
 															{englishName}
+														</p>
+													)}
+													{description && (
+														<p className="text-[11px] text-[#a1a1aa] mb-[14px] leading-snug">
+															{description}
 														</p>
 													)}
 
@@ -1054,6 +1168,61 @@ function App() {
 				{mode === "staff" && (
 					<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 						<div className="lg:col-span-2 space-y-6">
+							{/* Play Spaces Management */}
+							<div className="bg-[#14141e]/40 border border-white/8 rounded-[16px] p-6 backdrop-blur-sm">
+								<h2 className="text-lg font-bold text-white flex items-center gap-2 mb-6">
+									<Sparkles size={18} className="text-[#f472b6]" />
+									遊技スペース・ステータス管理
+								</h2>
+								<div className="space-y-4">
+									{spaces.map((space) => (
+										<div
+											key={space.id}
+											className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+										>
+											<span className="text-[14px] font-bold text-white">
+												{space.name}
+											</span>
+											<div className="flex bg-[#0a0a12] border border-[rgba(255,255,255,0.1)] rounded-xl p-1 gap-1">
+												<button
+													type="button"
+													onClick={() => handleUpdateSpaceStatus(space.id, "available")}
+													className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
+														space.status === "available"
+															? "bg-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]"
+															: "text-zinc-500 hover:text-emerald-400 hover:bg-emerald-950/30"
+													}`}
+												>
+													空き
+												</button>
+												<button
+													type="button"
+													onClick={() => handleUpdateSpaceStatus(space.id, "in_use")}
+													className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
+														space.status === "in_use"
+															? "bg-rose-600 text-white shadow-[0_0_15px_rgba(225,29,72,0.4)]"
+															: "text-zinc-500 hover:text-rose-400 hover:bg-rose-950/30"
+													}`}
+												>
+													使用中
+												</button>
+												<button
+													type="button"
+													onClick={() => handleUpdateSpaceStatus(space.id, "preparing")}
+													className={`px-4 py-1.5 rounded-lg text-[12px] font-bold transition-all cursor-pointer ${
+														space.status === "preparing"
+															? "bg-amber-600 text-white shadow-[0_0_15px_rgba(217,119,6,0.4)]"
+															: "text-zinc-500 hover:text-amber-400 hover:bg-amber-950/30"
+													}`}
+												>
+													準備中
+												</button>
+											</div>
+										</div>
+									))}
+								</div>
+							</div>
+
 							<div className="bg-[#14141e]/40 border border-white/8 rounded-[16px] p-6 backdrop-blur-sm">
 								<div className="flex justify-between items-center mb-6">
 									<div>
