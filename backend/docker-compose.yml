@@ -15,6 +15,9 @@ services:
       - DB_PORT=3306
       - DB_NAME=order_system_db
       - ORDER_ACCESS_SECRET=${ORDER_ACCESS_SECRET}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - JWT_SECRET=${JWT_SECRET:-}
       - FRONTEND_ORIGINS=http://localhost:3000
     depends_on:
       db:

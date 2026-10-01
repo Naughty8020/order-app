@@ -15,6 +15,10 @@ func main() {
 	}
 
 	config.SeedMenus(db)
+	if err := config.SeedAdmin(db); err != nil {
+		slog.Error("failed to seed admin", "err", err)
+		return
+	}
 
 	if err := server.Run(db); err != nil {
 		slog.Error("failed to run server", "err", err)
