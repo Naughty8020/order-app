@@ -12,12 +12,12 @@ import (
 // SeedMenus - メニューの初期データを投入する関数
 func SeedMenus(db *gorm.DB) {
 	menus := []models.Menu{
-		{ID: 1, Name: "コーラ (Cola)", Price: 400, IsAvailable: true},
-		{ID: 2, Name: "ファンタグレープ (Fanta Grape)", Price: 400, IsAvailable: true},
-		{ID: 3, Name: "ファンタオレンジ (Fanta Orange)", Price: 400, IsAvailable: true},
-		{ID: 4, Name: "三ツ矢サイダー (Mitsuya Cider)", Price: 400, IsAvailable: true},
-		{ID: 5, Name: "アップルジュース (Apple Juice)", Price: 400, IsAvailable: true},
-		{ID: 6, Name: "オレンジジュース (Orange Juice)", Price: 400, IsAvailable: true},
+		{ID: 1, Name: "コーラ (Cola)", Price: 200, IsAvailable: true},
+		{ID: 2, Name: "ファンタグレープ (Fanta Grape)", Price: 200, IsAvailable: true},
+		{ID: 3, Name: "ファンタオレンジ (Fanta Orange)", Price: 200, IsAvailable: true},
+		{ID: 4, Name: "三ツ矢サイダー (Mitsuya Cider)", Price: 200, IsAvailable: true},
+		{ID: 5, Name: "アップルジュース (Apple Juice)", Price: 200, IsAvailable: true},
+		{ID: 6, Name: "オレンジジュース (Orange Juice)", Price: 200, IsAvailable: true},
 	}
 
 	log.Println("シードデータの投入を開始します...")
