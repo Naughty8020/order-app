@@ -30,7 +30,12 @@ func Run(db *gorm.DB) error {
 	r := gin.Default()
 	allowedOrigins := []string{"http://localhost:3000"}
 	if configured := os.Getenv("FRONTEND_ORIGINS"); configured != "" {
-		allowedOrigins = strings.Split(configured, ",")
+		allowedOrigins = nil
+		for _, o := range strings.Split(configured, ",") {
+			if o = strings.TrimSpace(o); o != "" {
+				allowedOrigins = append(allowedOrigins, o)
+			}
+		}
 	}
 
 	r.Use(cors.New(cors.Config{
