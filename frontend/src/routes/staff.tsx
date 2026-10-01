@@ -27,7 +27,7 @@ import {
 	type Menu,
 } from "../cart";
 
-export const Route = createFileRoute("/")({ component: App });
+export const Route = createFileRoute("/staff")({ component: App });
 
 // Interfaces
 interface OrderItem {
@@ -58,9 +58,7 @@ function App() {
 	const [orders, setOrders] = useState<Order[]>([]);
 	const [cart, setCart] = useState<Cart>({});
 	const [isCartOpen, setIsCartOpen] = useState(false);
-	const [mode, setMode] = useState<"customer" | "staff" | "monitor">(
-		"customer",
-	);
+	const [mode, setMode] = useState<"customer" | "staff" | "monitor">("staff");
 	const [activeCategory, _setActiveCategory] = useState<string>("all");
 	const [loading, setLoading] = useState<boolean>(true);
 	const [error, setError] = useState<string | null>(null);
@@ -669,7 +667,45 @@ function App() {
 						</p>
 					</div>
 
-
+					{/* Mode Buttons */}
+					<div className="flex gap-3 flex-wrap justify-end">
+						<button
+							type="button"
+							onClick={() => setMode("customer")}
+							className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition cursor-pointer
+								${
+									mode === "customer"
+										? "bg-gradient-to-br from-[#ec4899] to-[#db2777] text-white shadow-[0_4px_20px_rgba(236,72,153,0.35)] border-none"
+										: "bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.1)] text-[#e4e4e7] hover:bg-[rgba(255,255,255,0.08)]"
+								}`}
+						>
+							👤 顧客メニュー
+						</button>
+						<button
+							type="button"
+							onClick={() => setMode("staff")}
+							className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition cursor-pointer
+								${
+									mode === "staff"
+										? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-[0_4px_20px_rgba(16,185,129,0.35)] border-none"
+										: "bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.1)] text-[#e4e4e7] hover:bg-[rgba(255,255,255,0.08)]"
+								}`}
+						>
+							⚙ スタッフ画面
+						</button>
+						<button
+							type="button"
+							onClick={() => setMode("monitor")}
+							className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition cursor-pointer
+								${
+									mode === "monitor"
+										? "bg-gradient-to-br from-sky-500 to-sky-600 text-white shadow-[0_4px_20px_rgba(14,165,233,0.35)] border-none"
+										: "bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.1)] text-[#e4e4e7] hover:bg-[rgba(255,255,255,0.08)]"
+								}`}
+						>
+							📺 サイネージモニター
+						</button>
+					</div>
 				</div>
 			</div>
 
@@ -694,6 +730,7 @@ function App() {
 				)}
 
 				{/* ===== 1. CUSTOMER MODE ===== */}
+				{mode === "customer" && (
 					<div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
 						{orderAccessStatus !== "valid" && (
 							<div className="lg:col-span-2 bg-amber-950/40 border border-amber-400/60 rounded-2xl p-5 text-amber-100 shadow-[0_0_15px_rgba(251,191,36,0.15)] mb-4">
@@ -1072,6 +1109,450 @@ function App() {
 							</div>
 						</div>
 					</div>
+				)}
+
+				{/* ===== 2. STAFF MODE ===== */}
+				{mode === "staff" && (
+					<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+						<div className="lg:col-span-3 bg-[#14141e]/60 border border-emerald-500/20 rounded-2xl p-6">
+							<h2 className="text-lg font-bold text-white">
+								店頭注文用QRコード
+							</h2>
+							<p className="text-xs text-zinc-400 mt-1 mb-4">
+								QRコードは常時表示され、10分ごとに自動更新されます。
+							</p>
+							<div className="flex justify-center">
+								<div className="bg-white p-3 rounded-xl text-center min-w-56 min-h-64 flex flex-col items-center justify-center">
+									{qrImage ? (
+										<>
+											<img
+												src={qrImage}
+												alt="注文ページを開くQRコード"
+												className="w-56 h-56"
+											/>
+											<p className="text-[11px] text-zinc-700 mt-2">
+												有効期限: {new Date(qrExpiresAt).toLocaleTimeString()}
+											</p>
+										</>
+									) : (
+										<p className="text-sm text-zinc-700 px-4">
+											{qrLoading
+												? "QRコードを発行中…"
+												: "QRコードを取得できませんでした"}
+										</p>
+									)}
+								</div>
+							</div>
+						</div>
+						<div className="lg:col-span-2 space-y-6">
+							<div className="bg-[#14141e]/40 border border-white/8 rounded-[16px] p-6 backdrop-blur-sm">
+								<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+									<div>
+										<h2 className="text-lg font-bold text-white flex items-center gap-2">
+											<Volume2 size={18} className="text-emerald-400" />
+											受注・進行モニター
+										</h2>
+										<p className="text-xs text-zinc-400 mt-0.5">
+											「準備完了(呼び出し)」 ➡️ 「お渡し完了」の2ステップで処理
+										</p>
+									</div>
+									<div className="flex flex-wrap gap-2 w-full md:w-auto mt-2 md:mt-0">
+										<span className="inline-flex items-center justify-center whitespace-nowrap text-xs font-bold bg-amber-950 text-amber-400 border border-amber-800 px-3 py-1 rounded-full shrink-0">
+											準備中: {orders.filter((o) => o.status === "pending").length}件
+										</span>
+										<span className="inline-flex items-center justify-center whitespace-nowrap text-xs font-bold bg-pink-950 text-pink-400 border border-pink-800 px-3 py-1 rounded-full shrink-0">
+											呼び出し: {orders.filter((o) => o.status === "ready").length}件
+										</span>
+									</div>
+								</div>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+									{orders.filter(
+										(o) => o.status === "pending" || o.status === "ready",
+									).length === 0 ? (
+										<div className="md:col-span-2 py-16 text-center text-zinc-500 text-sm flex flex-col items-center justify-center bg-[rgba(255,255,255,0.03)] rounded-[16px] border border-[rgba(255,255,255,0.05)]">
+											<Check size={32} className="text-emerald-500/40 mb-3" />
+											<p className="font-bold text-zinc-400">
+												処理待ちの注文はありません
+											</p>
+										</div>
+									) : (
+										orders
+											.filter(
+												(o) => o.status === "pending" || o.status === "ready",
+											)
+											.map((order) => {
+												const total = getOrderTotal(order);
+												const isReady = order.status === "ready";
+												return (
+													<div
+														key={order.id}
+														className={`bg-[rgba(255,255,255,0.04)] border rounded-[16px] p-5 flex flex-col justify-between transition relative overflow-hidden ${isReady ? "border-[rgba(236,72,153,0.4)] shadow-[0_0_20px_rgba(236,72,153,0.1)]" : "border-[rgba(255,255,255,0.08)]"}`}
+													>
+														<div className="flex justify-between items-start mb-3 border-b border-[rgba(255,255,255,0.08)] pb-3">
+															<div className="flex items-center gap-2">
+																<span
+																	className={`text-3xl font-black tracking-wider ${isReady ? "text-[#f472b6]" : "text-amber-400"}`}
+																>
+																	#{order.id}
+																</span>
+																<span
+																	className={`text-[10px] font-extrabold uppercase px-2 py-1 rounded border ${isReady ? "bg-pink-950/40 border-pink-500/30 text-[#f472b6]" : "bg-amber-950/40 border-amber-500/20 text-amber-400"}`}
+																>
+																	{isReady ? "呼び出し中" : "準備中"}
+																</span>
+															</div>
+															<span className="text-[11px] text-zinc-500 mt-2.5">
+																{new Date(
+																	order.created_at || Date.now(),
+																).toLocaleTimeString()}
+															</span>
+														</div>
+														<div className="space-y-2 mb-5 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+															{order.order_items?.map((item) => (
+																<div
+																	key={item.id}
+																	className="bg-[rgba(255,255,255,0.04)] p-2.5 rounded-[12px] border border-[rgba(255,255,255,0.06)] flex justify-between items-center text-xs"
+																>
+																	<span className="text-white font-semibold truncate max-w-[140px]">
+																		{item.menu.name}
+																	</span>
+																	<span className="text-zinc-300 font-bold bg-white/5 border border-white/8 px-2 py-1 rounded text-[11px]">
+																		x {item.quantity}
+																	</span>
+																</div>
+															))}
+														</div>
+														<div className="bg-[rgba(255,255,255,0.04)] p-3 rounded-[12px] border border-[rgba(255,255,255,0.06)] flex justify-between text-[13px] text-zinc-400 mb-5">
+															<span>合計</span>
+															<span className="text-white font-bold">
+																¥{total.toLocaleString()}
+															</span>
+														</div>
+														{!isReady ? (
+															<button
+																type="button"
+																onClick={() =>
+																	handleUpdateStatus(order.id, "ready")
+																}
+																className="w-full bg-gradient-to-r from-amber-500 to-[#ec4899] hover:opacity-90 text-white font-extrabold text-[13px] py-3.5 rounded-[12px] shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
+															>
+																<BellRing
+																	size={16}
+																	className="animate-bounce"
+																/>
+																準備完了 ➡️ 呼び出し(Ready)
+															</button>
+														) : (
+															<button
+																type="button"
+																onClick={() =>
+																	handleUpdateStatus(order.id, "completed")
+																}
+																className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[13px] py-3.5 rounded-[12px] shadow-[0_4px_20px_rgba(16,185,129,0.35)] transition flex items-center justify-center gap-2 cursor-pointer"
+															>
+																<CheckCircle2 size={16} />
+																お渡し完了 (Served)
+															</button>
+														)}
+													</div>
+												);
+											})
+									)}
+								</div>
+							</div>
+							{/* Completed History */}
+							<div className="bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] rounded-[16px] p-6 backdrop-blur-sm">
+								<h2 className="text-sm font-bold text-zinc-400 mb-4">
+									最近の提供完了履歴
+								</h2>
+								<div className="space-y-2 max-h-52 overflow-y-auto custom-scrollbar pr-2">
+									{orders.filter((o) => o.status === "completed").length ===
+									0 ? (
+										<p className="text-xs text-zinc-600 text-center py-4">
+											履歴はありません
+										</p>
+									) : (
+										orders
+											.filter((o) => o.status === "completed")
+											.slice()
+											.reverse()
+											.map((order) => {
+												const total = getOrderTotal(order);
+												const count = getOrderItemsCount(order);
+												return (
+													<div
+														key={order.id}
+														className="bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] rounded-[12px] p-3 flex justify-between items-center text-xs"
+													>
+														<div>
+															<span className="text-emerald-500 font-bold mr-2">
+																#{order.id}
+															</span>
+															<span className="text-zinc-400">
+																{order.order_items
+																	?.map(
+																		(item) =>
+																			`${item.menu.name} x${item.quantity}`,
+																	)
+																	.join(", ")}
+															</span>
+															<span className="text-zinc-500 ml-2">
+																({count}点 / ¥{total.toLocaleString()})
+															</span>
+														</div>
+														<span className="text-zinc-500 font-medium flex items-center gap-1">
+															<Check size={11} className="text-emerald-500" />
+															{new Date(
+																order.created_at || Date.now(),
+															).toLocaleTimeString()}
+														</span>
+													</div>
+												);
+											})
+									)}
+								</div>
+							</div>
+						</div>
+						{/* Menu Editor Sidebar */}
+						<div className="space-y-6">
+							<div className="bg-[#14141e]/40 border border-white/8 rounded-[16px] p-6 backdrop-blur-sm">
+								<h2 className="text-[15px] font-bold text-white flex items-center gap-2 mb-5">
+									<PlusCircle size={16} className="text-emerald-400" />
+									メニューの追加
+								</h2>
+								<form onSubmit={handleAddMenu} className="space-y-4">
+									<div>
+										<label
+											htmlFor="menuName"
+											className="block text-[12px] font-bold text-zinc-400 mb-2"
+										>
+											メニュー名
+										</label>
+										<input
+											id="menuName"
+											type="text"
+											placeholder="例: 特製ジントニック"
+											value={newMenuName}
+											onChange={(e) => setNewMenuName(e.target.value)}
+											className="w-full bg-[#0a0a12] border border-[rgba(255,255,255,0.1)] rounded-[12px] px-4 py-3 text-[13px] text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition"
+											required
+										/>
+									</div>
+									<div>
+										<label
+											htmlFor="menuPrice"
+											className="block text-[12px] font-bold text-zinc-400 mb-2"
+										>
+											価格 (¥)
+										</label>
+										<input
+											id="menuPrice"
+											type="number"
+											placeholder="400"
+											value={newMenuPrice}
+											onChange={(e) => setNewMenuPrice(e.target.value)}
+											className="w-full bg-[#0a0a12] border border-[rgba(255,255,255,0.1)] rounded-[12px] px-4 py-3 text-[13px] text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition"
+											required
+										/>
+									</div>
+									<button
+										type="submit"
+										disabled={submittingMenu}
+										className="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[13px] py-3.5 rounded-[12px] transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(16,185,129,0.35)] cursor-pointer"
+									>
+										{submittingMenu ? "追加中..." : "メニューリストに登録"}
+									</button>
+								</form>
+							</div>
+							<div className="bg-[#14141e]/40 border border-white/8 rounded-[16px] p-6 backdrop-blur-sm">
+								<h2 className="text-[15px] font-bold text-white flex items-center gap-2 mb-5 border-b border-[rgba(255,255,255,0.08)] pb-4">
+									メニュー在庫コントロール
+								</h2>
+								<div className="space-y-3 max-h-[340px] overflow-y-auto pr-2 custom-scrollbar">
+									{menus.map((menu) => (
+										<div
+											key={menu.id}
+											className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-3 flex justify-between items-center"
+										>
+											<div className="max-w-[140px] overflow-hidden">
+												<p className="text-[13px] font-extrabold text-white truncate mb-0.5">
+													{menu.name}
+												</p>
+												<p className="text-[11px] text-zinc-500 font-bold">
+													¥{menu.price.toLocaleString()}
+												</p>
+											</div>
+											<div className="flex items-center gap-1.5">
+												<button
+													type="button"
+													onClick={() => handleToggleAvailable(menu)}
+													className={`p-1.5 rounded-[8px] transition-colors cursor-pointer ${menu.is_available ? "text-emerald-400 hover:bg-emerald-950/40" : "text-rose-500 hover:bg-rose-950/40"}`}
+													title={
+														menu.is_available
+															? "販売を一時停止する"
+															: "販売を再開する"
+													}
+												>
+													{menu.is_available ? (
+														<ToggleRight size={22} />
+													) : (
+														<ToggleLeft size={22} />
+													)}
+												</button>
+												<button
+													type="button"
+													onClick={() => handleDeleteMenu(menu.id)}
+													className="p-1.5 hover:bg-[rgba(255,255,255,0.05)] text-zinc-600 hover:text-rose-400 rounded-[8px] transition cursor-pointer"
+													title="削除"
+												>
+													<Trash2 size={15} />
+												</button>
+											</div>
+										</div>
+									))}
+								</div>
+							</div>
+						</div>
+					</div>
+				)}
+
+				{/* ===== 3. MONITOR SCREEN ===== */}
+				{mode === "monitor" && (
+					<>
+						<style>{`
+							.monitor-bg-grid {
+								background-image: linear-gradient(rgba(0, 240, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 240, 255, 0.1) 1px, transparent 1px);
+								background-size: 60px 60px;
+								background-position: center;
+							}
+							.monitor-text-glow-pink { text-shadow: 0 0 15px rgba(236, 72, 153, 0.8), 0 0 30px rgba(236, 72, 153, 0.5); }
+							.monitor-text-glow-yellow { text-shadow: 0 0 15px rgba(250, 204, 21, 0.8), 0 0 30px rgba(250, 204, 21, 0.5); }
+							.monitor-text-glow-cyan { text-shadow: 0 0 15px rgba(34, 211, 238, 0.8), 0 0 30px rgba(34, 211, 238, 0.5); }
+							.monitor-box-glow-pink { box-shadow: 0 0 20px rgba(236, 72, 153, 0.4), inset 0 0 10px rgba(236, 72, 153, 0.2); }
+							@keyframes wave { 0%, 100% { height: 4px; } 50% { height: 16px; } }
+							.animate-wave-1 { animation: wave 1s ease-in-out infinite; }
+							.animate-wave-2 { animation: wave 1.2s ease-in-out infinite; }
+							.animate-wave-3 { animation: wave 0.8s ease-in-out infinite; }
+							.animate-spin-slow { animation: spin 4s linear infinite; }
+						`}</style>
+						<div className="fixed inset-0 z-50 bg-[#0b0c10] text-white flex p-8 gap-10 box-border overflow-hidden">
+							{/* Background Grid & Gradients */}
+							<div className="absolute inset-0 monitor-bg-grid opacity-60 pointer-events-none"></div>
+							<div className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ background: 'radial-gradient(circle at 80% 20%, rgba(236,72,153,0.15) 0%, transparent 40%), radial-gradient(circle at 20% 80%, rgba(34,211,238,0.1) 0%, transparent 40%)' }}></div>
+
+							{/* Close Button to return to normal mode */}
+							<button type="button" onClick={() => setMode('customer')} className="absolute top-4 right-4 z-50 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer text-white backdrop-blur-md">
+								<X size={24} />
+							</button>
+
+							{/* ================= 左側：QRコードエリア (30%) ================= */}
+							<div className="w-[30%] bg-black/50 backdrop-blur-xl border border-white/10 rounded-[40px] flex flex-col items-center justify-center p-12 shadow-[0_0_40px_rgba(0,0,0,0.8)] relative overflow-hidden">
+								<div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-cyan-400 to-blue-600"></div>
+								
+								<div className="bg-white p-5 rounded-[32px] mb-10 monitor-box-glow-pink relative">
+									<div className="absolute -inset-1 bg-gradient-to-r from-pink-500 to-cyan-500 rounded-[36px] blur opacity-30 animate-pulse"></div>
+									{qrImage ? (
+										<img src={qrImage} alt="QR Code" className="w-64 h-64 rounded-2xl relative z-10" />
+									) : (
+										<div className="w-64 h-64 flex items-center justify-center text-zinc-700 bg-white relative z-10 rounded-2xl">
+											{qrLoading ? "QR発行中…" : "QR取得エラー"}
+										</div>
+									)}
+								</div>
+
+								<h2 className="text-4xl font-black text-white mb-4 tracking-wider">スマホで注文！</h2>
+								<p className="text-lg text-zinc-400 font-bold mb-6">Scan QR for Order</p>
+								
+								<div className="px-8 py-4 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-400/50 rounded-full">
+									<p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-400 monitor-text-glow-cyan tracking-widest">ORDER HERE!</p>
+								</div>
+							</div>
+
+							{/* ================= 右側：オーダー状況エリア (70%) ================= */}
+							<div className="w-[70%] flex flex-col relative z-10">
+								{/* ① ヘッダー部 */}
+								<div className="flex justify-between items-start mb-8 pl-2">
+									<div>
+										<div className="inline-flex items-center gap-2 bg-pink-500/10 border border-pink-500/40 px-4 py-1.5 rounded-full mb-4 shadow-[0_0_15px_rgba(236,72,153,0.3)]">
+											<span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse"></span>
+											<span className="text-pink-400 font-bold text-sm tracking-widest">MUSIC LOUNGE</span>
+										</div>
+										<h1 className="text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-pink-200 to-pink-500 drop-shadow-[0_0_20px_rgba(236,72,153,0.5)]">
+											Tech Club
+										</h1>
+									</div>
+
+									{/* NOW PLAYING Widget removed */}
+								</div>
+
+								{/* ② ステータスボード部 */}
+								<div className="flex gap-8 flex-1 min-h-0">
+									
+									{/* カラム1: PREPARING */}
+									<div className="flex-1 bg-black/40 backdrop-blur-xl border border-yellow-500/20 rounded-[32px] p-8 flex flex-col shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+										<h3 className="text-3xl font-black text-yellow-400 flex items-center gap-4 mb-8 monitor-text-glow-yellow">
+											<span className="w-4 h-4 rounded-full bg-yellow-400"></span>
+											PREPARING <span className="text-xl text-yellow-400/80">/ 準備中</span>
+										</h3>
+										
+										<div className="flex flex-col gap-5 overflow-y-auto custom-scrollbar pr-2 pb-2">
+											{preparingOrders.length === 0 ? (
+												<div className="flex items-center justify-center h-40 text-zinc-600 font-medium">
+													準備中のオーダーはありません
+												</div>
+											) : (
+												preparingOrders.map((order) => (
+													<div key={order.id} className="bg-white/5 border border-white/10 rounded-2xl p-5 flex items-center gap-6">
+														<span className="text-5xl font-black text-white w-24">#{order.id}</span>
+														<span className="text-xl font-bold text-zinc-300">
+															{order.order_items?.map((item) => item.menu.name.split(" (")[0]).join(", ")}
+														</span>
+													</div>
+												))
+											)}
+										</div>
+									</div>
+
+									{/* カラム2: READY TO PICK UP */}
+									<div className="flex-1 bg-black/40 backdrop-blur-xl border border-pink-500/40 rounded-[32px] p-8 flex flex-col shadow-[0_0_40px_rgba(236,72,153,0.15)] relative overflow-hidden">
+										<div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-pink-600 to-purple-600"></div>
+
+										<h3 className="text-3xl font-black text-pink-400 flex items-center gap-4 mb-8 monitor-text-glow-pink animate-pulse">
+											<span className="w-4 h-4 rounded-full bg-pink-400 animate-ping"></span>
+											READY <span className="text-xl text-pink-400/80">/ お呼び出し</span>
+										</h3>
+
+										<div className="flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2 pb-2">
+											{readyOrders.length === 0 ? (
+												<div className="flex items-center justify-center h-40 text-zinc-600 font-medium">
+													お呼び出し中のオーダーはありません
+												</div>
+											) : (
+												readyOrders.map((order, idx) => (
+													<div key={order.id} className="bg-pink-950/40 border border-pink-500/50 rounded-[24px] p-6 flex items-center gap-8 monitor-box-glow-pink relative">
+														<span className={`text-6xl md:text-7xl font-black text-pink-400 monitor-text-glow-pink w-32 ${idx === 0 ? 'animate-pulse' : ''}`}>#{order.id}</span>
+														<span className="text-2xl md:text-3xl font-bold text-white">
+															{order.order_items?.map((item) => item.menu.name.split(" (")[0]).join(", ")}
+														</span>
+													</div>
+												))
+											)}
+										</div>
+										
+										{readyOrders.length > 0 && (
+											<div className="mt-auto text-center pt-4">
+												<p className="text-pink-300/60 font-bold text-lg animate-pulse tracking-widest">
+													&gt;&gt;&gt; PLEASE COME TO THE COUNTER &lt;&lt;&lt;
+												</p>
+											</div>
+										)}
+									</div>
+
+								</div>
+							</div>
+						</div>
+					</>
+				)}
 			</main>
 		</div>
 	);
