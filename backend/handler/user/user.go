@@ -27,12 +27,12 @@ type loginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func(h *Handler) Login(c *gin.Context){
+func (h *Handler) Login(c *gin.Context) {
 	var req loginRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error":"username and password are required",
+			"error": "username and password are required",
 		})
 		return
 	}
@@ -46,7 +46,7 @@ func(h *Handler) Login(c *gin.Context){
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":"internal server error",
+			"error": "internal server error",
 		})
 		return
 	}

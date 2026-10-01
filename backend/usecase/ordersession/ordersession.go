@@ -21,12 +21,12 @@ type OrderAccessUsecase interface {
 }
 
 type orderAccessUsecase struct {
-	repo repository.OrderSessionRepository
+	repo   repository.OrderSessionRepository
 	secret []byte
 }
 
-func NewOrderAccessUsecase(repo repository.OrderSessionRepository, secret string,)*orderAccessUsecase{
-	return &orderAccessUsecase{repo: repo,secret: []byte(secret)}
+func NewOrderAccessUsecase(repo repository.OrderSessionRepository, secret string) *orderAccessUsecase {
+	return &orderAccessUsecase{repo: repo, secret: []byte(secret)}
 }
 
 var (
@@ -57,7 +57,6 @@ func (u *orderAccessUsecase) CurrentQRToken() (string, time.Time) {
 
 	return payload + "." + signature, expiresAt
 }
-
 
 func (u *orderAccessUsecase) ExchangeQRToken(
 	qrToken string,
@@ -193,4 +192,3 @@ func hashToken(token string) string {
 
 	return base64.RawURLEncoding.EncodeToString(hash[:])
 }
-

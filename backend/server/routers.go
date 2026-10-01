@@ -56,12 +56,12 @@ func Run(db *gorm.DB) error {
 	)
 
 	go func() {
-	ticker := time.NewTicker(10 * time.Minute)
+		ticker := time.NewTicker(10 * time.Minute)
 
-	for range ticker.C {
-		accessUC.DeleteExpiredSessions()
-	}
-}()
+		for range ticker.C {
+			accessUC.DeleteExpiredSessions()
+		}
+	}()
 
 	accessHandler := orderAccessHandler.NewHandler(accessUC)
 
@@ -97,6 +97,6 @@ func Run(db *gorm.DB) error {
 		accessGroup.GET("/qr", accessHandler.GetQRToken)
 		accessGroup.POST("/session", accessHandler.CreateSession)
 	}
-    r.POST("/api/login", loginHandler.Login)
+	r.POST("/api/login", loginHandler.Login)
 	return r.Run(":8080")
 }
