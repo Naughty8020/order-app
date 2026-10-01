@@ -19,18 +19,18 @@ import {
 	Volume2,
 	X,
 } from "lucide-react";
+import QRCode from "qrcode";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	type Cart,
+	changeCartQuantity,
+	getCartSummary,
+	type Menu,
+} from "../cart";
 
 export const Route = createFileRoute("/")({ component: App });
 
 // Interfaces
-interface Menu {
-	id: number;
-	name: string;
-	price: number;
-	is_available: boolean;
-}
-
 interface OrderItem {
 	id: number;
 	order_id: number;
@@ -47,9 +47,9 @@ interface Order {
 	order_items: OrderItem[];
 }
 
-interface CartItem {
-	menu: Menu;
-	quantity: number;
+interface OrderSession {
+	token: string;
+	expiresAt: string;
 }
 
 interface Space {
@@ -90,17 +90,19 @@ function App() {
 	const [menus, setMenus] = useState<Menu[]>([]);
 	const [orders, setOrders] = useState<Order[]>([]);
 	const [cart, setCart] = useState<{ [id: number]: CartItem }>({});
-	const [spaces, setSpaces] = useState<Space[]>([
-		{ id: 1, name: "麻雀卓 (1卓)", status: "available" },
-		{ id: 2, name: "ゲームブース (Switch)", status: "available" },
-		{ id: 3, name: "ゲームブース (トランプ)", status: "available" },
-	]);
 	const [mode, setMode] = useState<"customer" | "staff" | "monitor">(
 		"customer",
 	);
 	const [activeCategory, setActiveCategory] = useState<string>("all");
 	const [loading, setLoading] = useState<boolean>(true);
 	const [error, setError] = useState<string | null>(null);
+	const [orderSession, setOrderSession] = useState<OrderSession | null>(null);
+	const [orderAccessStatus, setOrderAccessStatus] = useState<
+		"checking" | "valid" | "missing" | "invalid"
+	>("checking");
+	const [qrImage, setQrImage] = useState("");
+	const [qrExpiresAt, setQrExpiresAt] = useState("");
+	const [qrLoading, setQrLoading] = useState(false);
 
 	// Staff Mode States
 	const [newMenuName, setNewMenuName] = useState("");
@@ -137,6 +139,60 @@ function App() {
 		return "http://localhost:8080/api";
 	};
 	const API_BASE = getApiBase();
+
+	useEffect(() => {
+		const exchangeOrderToken = async () => {
+			const params = new URLSearchParams(window.location.search);
+			const qrToken = params.get("order_token");
+
+			if (!qrToken) {
+				const saved = window.sessionStorage.getItem("order_session");
+				if (saved) {
+					try {
+						const session = JSON.parse(saved) as OrderSession;
+						if (new Date(session.expiresAt).getTime() > Date.now()) {
+							setOrderSession(session);
+							setOrderAccessStatus("valid");
+							return;
+						}
+					} catch {
+						// Invalid stored data is discarded below.
+					}
+					window.sessionStorage.removeItem("order_session");
+				}
+				setOrderAccessStatus("missing");
+				return;
+			}
+
+			try {
+				const response = await fetch(
+					`${API_BASE}/order-access/session?token=${encodeURIComponent(qrToken)}`,
+					{ method: "POST" },
+				);
+				if (!response.ok) throw new Error("invalid QR token");
+				const data = await response.json();
+				const session = {
+					token: data.session_token as string,
+					expiresAt: data.expires_at as string,
+				};
+				window.sessionStorage.setItem("order_session", JSON.stringify(session));
+				setOrderSession(session);
+				setOrderAccessStatus("valid");
+
+				params.delete("order_token");
+				const query = params.toString();
+				window.history.replaceState(
+					{},
+					"",
+					`${window.location.pathname}${query ? `?${query}` : ""}`,
+				);
+			} catch {
+				setOrderAccessStatus("invalid");
+			}
+		};
+
+		void exchangeOrderToken();
+	}, [API_BASE]);
 
 	const showToast = useCallback(
 		(message: string, type: "success" | "error" | "info" = "success") => {
@@ -279,23 +335,7 @@ function App() {
 
 	// Update Cart Quantity
 	const updateCartQty = (menuId: number, delta: number) => {
-		setCart((prev) => {
-			const current = prev[menuId];
-			if (!current) return prev;
-			const newQty = current.quantity + delta;
-			if (newQty <= 0) {
-				const copy = { ...prev };
-				delete copy[menuId];
-				return copy;
-			}
-			return {
-				...prev,
-				[menuId]: {
-					...current,
-					quantity: newQty,
-				},
-			};
-		});
+		setCart((prev) => changeCartQuantity(prev, menuId, delta));
 	};
 
 	// Remove from Cart
@@ -311,6 +351,14 @@ function App() {
 	const submitOrder = async () => {
 		const items = Object.values(cart);
 		if (items.length === 0) return;
+		if (
+			!orderSession ||
+			new Date(orderSession.expiresAt).getTime() <= Date.now()
+		) {
+			setOrderAccessStatus("invalid");
+			showToast("注文用QRコードをもう一度読み取ってください", "error");
+			return;
+		}
 
 		setLoading(true);
 		try {
@@ -323,14 +371,17 @@ function App() {
 
 			const response = await fetch(`${API_BASE}/orders`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					"X-Order-Session": orderSession.token,
+				},
 				body: JSON.stringify(payload),
 			});
 
 			if (response.ok) {
 				const resData = await response.json();
-				if (resData.order?.id) {
-					setSuccessModal({ show: true, orderId: resData.order.id });
+				if (resData.id) {
+					setSuccessModal({ show: true, orderId: resData.id });
 				} else {
 					showToast(
 						"注文は完了しましたが、オーダー番号を取得できませんでした。",
@@ -344,6 +395,11 @@ function App() {
 				setOrders(orderData.orders || []);
 			} else {
 				const errorData = await response.json();
+				if (response.status === 401) {
+					window.sessionStorage.removeItem("order_session");
+					setOrderSession(null);
+					setOrderAccessStatus("invalid");
+				}
 				showToast(errorData.error || "注文の送信に失敗しました", "error");
 			}
 		} catch (err) {
@@ -353,6 +409,42 @@ function App() {
 			setLoading(false);
 		}
 	};
+
+	const generateOrderQR = useCallback(async () => {
+		setQrLoading(true);
+		try {
+			const response = await fetch(`${API_BASE}/order-access/qr`);
+			if (!response.ok) throw new Error("QRコードの発行に失敗しました");
+			const data = await response.json();
+			const orderURL = new URL(window.location.origin);
+			orderURL.searchParams.set("order_token", data.token);
+			setQrImage(
+				await QRCode.toDataURL(orderURL.toString(), { width: 280, margin: 2 }),
+			);
+			setQrExpiresAt(data.expires_at);
+		} catch (err) {
+			showToast(
+				err instanceof Error ? err.message : "QRコードの発行に失敗しました",
+				"error",
+			);
+		} finally {
+			setQrLoading(false);
+		}
+	}, [API_BASE, showToast]);
+
+	useEffect(() => {
+		if (!qrImage) void generateOrderQR();
+	}, [generateOrderQR, qrImage]);
+
+	useEffect(() => {
+		if (!qrImage || !qrExpiresAt) return;
+		const delay = Math.max(
+			new Date(qrExpiresAt).getTime() - Date.now() + 1000,
+			1000,
+		);
+		const timer = window.setTimeout(() => void generateOrderQR(), delay);
+		return () => window.clearTimeout(timer);
+	}, [generateOrderQR, qrExpiresAt, qrImage]);
 
 	// Staff: Update Order Status
 	const handleUpdateStatus = async (orderId: number, status: string) => {
@@ -472,14 +564,7 @@ function App() {
 	};
 
 	// Helpers
-	const cartTotal = Object.values(cart).reduce(
-		(sum, item) => sum + item.menu.price * item.quantity,
-		0,
-	);
-	const cartCount = Object.values(cart).reduce(
-		(sum, item) => sum + item.quantity,
-		0,
-	);
+	const { total: cartTotal, count: cartCount } = getCartSummary(cart);
 
 	const getOrderTotal = (order: Order) => {
 		return order.order_items
@@ -780,7 +865,7 @@ function App() {
 				{/* ===== 1. CUSTOMER MODE ===== */}
 				{mode === "customer" && (
 					<div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
-						{/* First Column: Spaces & Menus */}
+						{/* Menu Grid */}
 						<div>
 							{/* Play Spaces Availability */}
 							<section className="mb-8 bg-[rgba(20,20,30,0.6)] border border-[rgba(255,255,255,0.08)] rounded-[16px] p-6 backdrop-blur-sm">
@@ -1143,7 +1228,7 @@ function App() {
 										<button
 											type="button"
 											onClick={submitOrder}
-											disabled={loading}
+											disabled={loading || orderAccessStatus !== "valid"}
 											className="w-full mt-5 bg-gradient-to-br from-[#ec4899] to-[#db2777] hover:opacity-90 text-white font-extrabold py-3.5 rounded-[12px] shadow-[0_4px_20px_rgba(236,72,153,0.35)] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-[14px] cursor-pointer"
 										>
 											{loading ? (
@@ -1167,6 +1252,36 @@ function App() {
 				{/* ===== 2. STAFF MODE ===== */}
 				{mode === "staff" && (
 					<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+						<div className="lg:col-span-3 bg-[#14141e]/60 border border-emerald-500/20 rounded-2xl p-6">
+							<h2 className="text-lg font-bold text-white">
+								店頭注文用QRコード
+							</h2>
+							<p className="text-xs text-zinc-400 mt-1 mb-4">
+								QRコードは常時表示され、10分ごとに自動更新されます。
+							</p>
+							<div className="flex justify-center">
+								<div className="bg-white p-3 rounded-xl text-center min-w-56 min-h-64 flex flex-col items-center justify-center">
+									{qrImage ? (
+										<>
+											<img
+												src={qrImage}
+												alt="注文ページを開くQRコード"
+												className="w-56 h-56"
+											/>
+											<p className="text-[11px] text-zinc-700 mt-2">
+												有効期限: {new Date(qrExpiresAt).toLocaleTimeString()}
+											</p>
+										</>
+									) : (
+										<p className="text-sm text-zinc-700 px-4">
+											{qrLoading
+												? "QRコードを発行中…"
+												: "QRコードを取得できませんでした"}
+										</p>
+									)}
+								</div>
+							</div>
+						</div>
 						<div className="lg:col-span-2 space-y-6">
 							{/* Play Spaces Management */}
 							<div className="bg-[#14141e]/40 border border-white/8 rounded-[16px] p-6 backdrop-blur-sm">
@@ -1499,6 +1614,19 @@ function App() {
 				{/* ===== 3. MONITOR SCREEN ===== */}
 				{mode === "monitor" && (
 					<div className="bg-[rgba(10,10,18,0.8)] border border-[rgba(255,255,255,0.08)] rounded-[2.5rem] p-8 md:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden min-h-[75vh] backdrop-blur-xl">
+						<div className="absolute top-6 right-6 z-20 bg-white p-2 rounded-xl shadow-xl">
+							{qrImage ? (
+								<img
+									src={qrImage}
+									alt="注文ページを開くQRコード"
+									className="w-28 h-28 md:w-36 md:h-36"
+								/>
+							) : (
+								<div className="w-28 h-28 md:w-36 md:h-36 flex items-center justify-center text-center text-xs text-zinc-700 p-3">
+									{qrLoading ? "QR発行中…" : "QRを取得できませんでした"}
+								</div>
+							)}
+						</div>
 						<div className="flex flex-col md:flex-row justify-between items-center border-b border-[rgba(255,255,255,0.08)] pb-8 mb-10 gap-6">
 							<div>
 								<span className="text-[11px] tracking-[0.3em] font-black uppercase text-[#f472b6] bg-pink-950/50 border border-[rgba(236,72,153,0.4)] px-4 py-1.5 rounded-full shadow-[0_0_15px_rgba(236,72,153,0.15)]">
