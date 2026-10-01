@@ -36,8 +36,9 @@ function RouteComponent() {
       <h1>ログイン</h1>
 
       <div>
-        <label>ユーザーネーム</label>
+        <label htmlFor="username">ユーザーネーム</label>
         <input
+          id="username"
           type="text"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -46,8 +47,9 @@ function RouteComponent() {
       </div>
 
       <div>
-        <label>パスワード</label>
+        <label htmlFor="password">パスワード</label>
         <input
+          id="password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -55,7 +57,11 @@ function RouteComponent() {
         />
       </div>
 
-      <button onClick={handleLogin} disabled={loading}>
+      <button 
+        type="button"
+        onClick={handleLogin}  
+        disabled={loading}
+    >
         {loading ? 'ログイン中...' : 'ログイン'}
       </button>
 
