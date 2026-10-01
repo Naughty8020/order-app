@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-
 func InitDB() (*gorm.DB, error) {
 	user := os.Getenv("DB_USER")
 	pass := os.Getenv("DB_PASSWORD")
@@ -29,7 +28,7 @@ func InitDB() (*gorm.DB, error) {
 
 	log.Println("GORM: MySQLへの接続に成功しました！🎉")
 
-	err = db.AutoMigrate(&models.Menu{}, &models.Order{}, &models.OrderItem{})
+	err = db.AutoMigrate(&models.Menu{}, &models.Order{}, &models.OrderItem{}, &models.OrderSession{})
 	if err != nil {
 		return nil, fmt.Errorf("マイグレーションに失敗しました: %w", err)
 	}

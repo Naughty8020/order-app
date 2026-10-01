@@ -14,6 +14,8 @@ services:
       - DB_HOST=db
       - DB_PORT=3306
       - DB_NAME=order_system_db
+      - ORDER_ACCESS_SECRET=${ORDER_ACCESS_SECRET}
+      - FRONTEND_ORIGINS=http://localhost:3000
     depends_on:
       db:
         condition: service_healthy
