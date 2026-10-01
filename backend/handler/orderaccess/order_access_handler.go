@@ -31,6 +31,7 @@ func (h *Handler) CreateSession(c *gin.Context) {
 		Token string `json:"token" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 	sessionToken, expiresAt, err := h.usecase.ExchangeQRToken(req.Token)
