@@ -67,6 +67,7 @@ function App() {
 		"checking" | "valid" | "missing" | "invalid"
 	>("checking");
 	const [qrImage, setQrImage] = useState("");
+	const [qrUrl, setQrUrl] = useState("");
 	const [qrExpiresAt, setQrExpiresAt] = useState("");
 	const [qrLoading, setQrLoading] = useState(false);
 
@@ -130,8 +131,12 @@ function App() {
 
 			try {
 				const response = await fetch(
-					`${API_BASE}/order-access/session?token=${encodeURIComponent(qrToken)}`,
-					{ method: "POST" },
+					`${API_BASE}/order-access/session`,
+					{
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ token: qrToken }),
+					},
 				);
 				if (!response.ok) throw new Error("invalid QR token");
 				const data = await response.json();
@@ -364,6 +369,7 @@ function App() {
 			setQrImage(
 				await QRCode.toDataURL(orderURL.toString(), { width: 280, margin: 2 }),
 			);
+			setQrUrl(orderURL.toString());
 			setQrExpiresAt(data.expires_at);
 		} catch (err) {
 			showToast(
@@ -1130,6 +1136,9 @@ function App() {
 												alt="注文ページを開くQRコード"
 												className="w-56 h-56"
 											/>
+											<a href={qrUrl} className="mt-3 block max-w-64 break-all text-xs text-blue-700 underline">
+												{qrUrl}
+											</a>
 											<p className="text-[11px] text-zinc-700 mt-2">
 												有効期限: {new Date(qrExpiresAt).toLocaleTimeString()}
 											</p>
@@ -1460,6 +1469,11 @@ function App() {
 									)}
 								</div>
 
+								{qrUrl && (
+									<a href={qrUrl} className="relative z-10 mb-6 block w-full break-all text-xs text-cyan-300 underline">
+										{qrUrl}
+									</a>
+								)}
 								<h2 className="text-4xl font-black text-white mb-4 tracking-wider">スマホで注文！</h2>
 								<p className="text-lg text-zinc-400 font-bold mb-6">Scan QR for Order</p>
 								

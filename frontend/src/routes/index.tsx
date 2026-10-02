@@ -132,8 +132,12 @@ function App() {
 
 			try {
 				const response = await fetch(
-					`${API_BASE}/order-access/session?token=${encodeURIComponent(qrToken)}`,
-					{ method: "POST" },
+					`${API_BASE}/order-access/session`,
+					{
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ token: qrToken }),
+					},
 				);
 				if (!response.ok) throw new Error("invalid QR token");
 				const data = await response.json();
