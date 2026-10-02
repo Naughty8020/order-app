@@ -32,7 +32,7 @@ func (r *orderSessionRepository) FindByTokenHash(tokenHash string) (*models.Orde
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, repository.ErrNotFound
 	}
-	
+
 	if err != nil {
 		return nil, err
 	}

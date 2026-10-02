@@ -14,7 +14,7 @@ type Handler struct {
 	usecase ordersession.OrderAccessUsecase
 }
 
-func NewHandler(usecase ordersession.OrderAccessUsecase,) *Handler {
+func NewHandler(usecase ordersession.OrderAccessUsecase) *Handler {
 	return &Handler{usecase: usecase}
 }
 

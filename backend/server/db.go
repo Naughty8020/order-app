@@ -28,7 +28,7 @@ func InitDB() (*gorm.DB, error) {
 
 	log.Println("GORM: MySQLへの接続に成功しました！🎉")
 
-	err = db.AutoMigrate(&models.Menu{}, &models.Order{}, &models.OrderItem{}, &models.OrderSession{})
+	err = db.AutoMigrate(&models.Menu{}, &models.Order{}, &models.OrderItem{}, &models.OrderSession{}, &models.User{})
 	if err != nil {
 		return nil, fmt.Errorf("マイグレーションに失敗しました: %w", err)
 	}
