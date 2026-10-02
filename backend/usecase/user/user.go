@@ -27,16 +27,17 @@ var dummyPasswordHash = []byte(
 
 func (u *userUsecase) Login(userName, password string) (string, error) {
 	user, err := u.repo.FindByUserName(userName)
-	if err != nil {
-		return "", err
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		_ = bcrypt.CompareHashAndPassword(
+			dummyPasswordHash,
+			[]byte(password),
+		)
+		return "", ErrInvalidCredentials
 	}
 
-	if errors.Is(err, gorm.ErrRecordNotFound){
-		  _ = bcrypt.CompareHashAndPassword(
-        dummyPasswordHash,
-        []byte(password),
-    )
-		return "", ErrInvalidCredentials
+	if err != nil {
+		return "", err
 	}
 
 	if err := bcrypt.CompareHashAndPassword(
