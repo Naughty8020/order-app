@@ -21,6 +21,9 @@ func NewUserUsecase(repo repository.UserRepository) *userUsecase {
 }
 
 var ErrInvalidCredentials = errors.New("invalid username or password")
+var dummyPasswordHash = []byte(
+	"$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+)
 
 func (u *userUsecase) Login(userName, password string) (string, error) {
 	user, err := u.repo.FindByUserName(userName)
@@ -29,6 +32,10 @@ func (u *userUsecase) Login(userName, password string) (string, error) {
 	}
 
 	if errors.Is(err, gorm.ErrRecordNotFound){
+		  _ = bcrypt.CompareHashAndPassword(
+        dummyPasswordHash,
+        []byte(password),
+    )
 		return "", ErrInvalidCredentials
 	}
 
