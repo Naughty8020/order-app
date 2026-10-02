@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type userUsecase struct {
@@ -24,10 +25,13 @@ var ErrInvalidCredentials = errors.New("invalid username or password")
 func (u *userUsecase) Login(userName, password string) (string, error) {
 	user, err := u.repo.FindByUserName(userName)
 	if err != nil {
+		return "", err
+	}
+
+	if errors.Is(err, gorm.ErrRecordNotFound){
 		return "", ErrInvalidCredentials
 	}
 
-	// 入力されたpasswordとDBのハッシュを比較
 	if err := bcrypt.CompareHashAndPassword(
 		[]byte(user.PasswordHash),
 		[]byte(password),
