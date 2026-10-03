@@ -9,7 +9,7 @@ import {
 import { afterEach, expect, it, vi } from "vitest";
 import { useCustomerOrder } from "../../hooks/customer/useCustomerOrder";
 import { CartTray } from "./cart/CartTray";
-import { MenuGrid } from "./MenuGrid";
+import { MenuGrid } from "./menu/MenuGrid";
 import { OrderSuccessModal } from "./order/OrderSuccessModal";
 import { OrderTracking } from "./order/OrderTracking";
 
