@@ -1,5 +1,5 @@
-import type { Cart, Menu } from "../../cart";
-import { MenuCard } from "./menu/MenuCard";
+import type { Cart, Menu } from "../../../cart";
+import { MenuCard } from "./MenuCard";
 
 interface Props {
 	loading: boolean;

@@ -1,9 +1,9 @@
 import { BellRing, Clock } from "lucide-react";
-import type { Order } from "../../api/order";
+import type { Order } from "../../../api/order";
 import {
 	getOrderItemsCount,
 	getOrderTotal,
-} from "../../utils/customerPresentation";
+} from "../../../utils/customerPresentation";
 export function OrderCard({ order }: { order: Order }) {
 	const total = getOrderTotal(order);
 	const count = getOrderItemsCount(order);
