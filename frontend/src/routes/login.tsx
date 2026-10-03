@@ -22,6 +22,8 @@ function RouteComponent() {
         password,
       })
 
+      localStorage.setItem('token', data.token)
+
       console.log('ログイン成功', data)
     } catch (error) {
       console.error(error)
