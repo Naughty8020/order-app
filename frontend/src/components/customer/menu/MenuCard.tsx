@@ -1,10 +1,10 @@
 import { Minus, Plus } from "lucide-react";
-import type { CartItem, Menu } from "../../cart";
+import type { CartItem, Menu } from "../../../cart";
 import {
 	getDrinkEmoji,
 	getDrinkEnglish,
 	getDrinkIconBg,
-} from "../../utils/customerPresentation";
+} from "../../../utils/customerPresentation";
 export function MenuCard({
 	menu,
 	inCart,

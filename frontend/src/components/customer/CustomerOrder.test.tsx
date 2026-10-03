@@ -8,10 +8,10 @@ import {
 } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { useCustomerOrder } from "../../hooks/customer/useCustomerOrder";
-import { CartTray } from "./CartTray";
+import { CartTray } from "./cart/CartTray";
 import { MenuGrid } from "./MenuGrid";
-import { OrderSuccessModal } from "./OrderSuccessModal";
-import { OrderTracking } from "./OrderTracking";
+import { OrderSuccessModal } from "./order/OrderSuccessModal";
+import { OrderTracking } from "./order/OrderTracking";
 
 function CustomerOrder() {
 	const state = useCustomerOrder();

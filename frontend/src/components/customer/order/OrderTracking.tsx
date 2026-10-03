@@ -1,5 +1,5 @@
 import { Clock, RotateCw } from "lucide-react";
-import type { Order } from "../../api/order";
+import type { Order } from "../../../api/order";
 import { OrderCard } from "./OrderCard";
 
 interface Props {

@@ -1,5 +1,5 @@
-import type { Cart } from "../../cart";
-import type { OrderAccessStatus } from "../../hooks/customer/useOrderSession";
+import type { Cart } from "../../../cart";
+import type { OrderAccessStatus } from "../../../hooks/customer/useOrderSession";
 
 interface Props {
 	cart: Cart;
@@ -21,7 +21,7 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import { getCartSummary } from "../../cart";
+import { getCartSummary } from "../../../cart";
 
 export function CartTray({
 	cart,

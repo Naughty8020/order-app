@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { CartTray } from "../components/customer/CartTray";
+import { CartTray } from "../components/customer/cart/CartTray";
 import { CustomerBackground } from "../components/customer/CustomerBackground";
 import { CustomerError } from "../components/customer/CustomerError";
 import { CustomerHeader } from "../components/customer/CustomerHeader";
 import { MenuGrid } from "../components/customer/MenuGrid";
-import { OrderAccessNotice } from "../components/customer/OrderAccessNotice";
-import { OrderSuccessModal } from "../components/customer/OrderSuccessModal";
-import { OrderTracking } from "../components/customer/OrderTracking";
+import { OrderAccessNotice } from "../components/customer/order/OrderAccessNotice";
+import { OrderSuccessModal } from "../components/customer/order/OrderSuccessModal";
+import { OrderTracking } from "../components/customer/order/OrderTracking";
 import { ToastNotification } from "../components/customer/ToastNotification";
 import { useCustomerOrder } from "../hooks/customer/useCustomerOrder";
 export const Route = createFileRoute("/")({ component: App });

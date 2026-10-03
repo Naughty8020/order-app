@@ -1,4 +1,4 @@
-import type { OrderAccessStatus } from "../../hooks/customer/useOrderSession";
+import type { OrderAccessStatus } from "../../../hooks/customer/useOrderSession";
 export function OrderAccessNotice({
 	orderAccessStatus,
 }: {
