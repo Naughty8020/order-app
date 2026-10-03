@@ -1531,9 +1531,9 @@ function App() {
 									
 									{/* カラム1: PREPARING */}
 									<div className="flex-1 bg-transparent border-4 border-blue-300/35 rounded-[28px] p-8 flex flex-col relative overflow-hidden">
-										<h3 className="text-3xl font-black font-serif text-blue-100 flex items-center gap-4 mb-8 tracking-wide">
+										<h3 className="text-3xl font-black font-serif text-white flex items-center gap-4 mb-8 tracking-wide">
 											<span className="w-3 h-3 rounded-full bg-blue-300"></span>
-											PREPARING <span className="text-lg text-blue-200/55 font-sans tracking-normal">/ 準備中</span>
+											PREPARING <span className="tracking-normal">/ 準備中</span>
 										</h3>
 										
 										<div className="grid grid-cols-2 2xl:grid-cols-3 gap-5 overflow-y-auto custom-scrollbar pr-2 pb-2">
@@ -1562,7 +1562,7 @@ function App() {
 									<div className="flex-1 bg-transparent border-4 border-sky-200/40 rounded-[28px] p-8 flex flex-col relative overflow-hidden">
 										<h3 className="text-3xl font-black font-serif text-white flex items-center gap-4 mb-8 tracking-wide">
 											<span className="w-3 h-3 rounded-full bg-white"></span>
-											READY <span className="text-lg text-sky-100/65 font-sans tracking-normal">/ お呼び出し</span>
+											READY <span className="tracking-normal">/ お呼び出し</span>
 										</h3>
 
 										<div className="grid grid-cols-2 2xl:grid-cols-3 gap-5 overflow-y-auto custom-scrollbar pr-2 pb-2">
