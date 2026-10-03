@@ -45,7 +45,9 @@ export async function createOrder(
 		body: JSON.stringify(payload),
 	});
 	if (!response.ok) {
-		const data: { error?: string } = await response.json();
+		const data: { error?: string } = await response
+			.json()
+			.catch(() => ({}));
 		return {
 			ok: false,
 			status: response.status,
