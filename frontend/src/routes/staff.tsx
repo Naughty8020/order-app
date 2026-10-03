@@ -1423,25 +1423,37 @@ function App() {
 				{mode === "monitor" && (
 					<>
 						<style>{`
-							.monitor-bg-grid {
-								background-image: linear-gradient(rgba(0, 240, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 240, 255, 0.1) 1px, transparent 1px);
-								background-size: 60px 60px;
-								background-position: center;
+							.monitor-bg-pattern {
+								background-image: radial-gradient(circle at 50% -10%, rgba(56, 189, 248, 0.3), transparent 36%), linear-gradient(180deg, rgba(10, 32, 72, 0.45), rgba(1, 6, 20, 0.95));
 							}
-							.monitor-text-glow-pink { text-shadow: 0 0 15px rgba(236, 72, 153, 0.8), 0 0 30px rgba(236, 72, 153, 0.5); }
-							.monitor-text-glow-yellow { text-shadow: 0 0 15px rgba(250, 204, 21, 0.8), 0 0 30px rgba(250, 204, 21, 0.5); }
-							.monitor-text-glow-cyan { text-shadow: 0 0 15px rgba(34, 211, 238, 0.8), 0 0 30px rgba(34, 211, 238, 0.5); }
-							.monitor-box-glow-pink { box-shadow: 0 0 20px rgba(236, 72, 153, 0.4), inset 0 0 10px rgba(236, 72, 153, 0.2); }
+							.monitor-disco-dots {
+								background-image: radial-gradient(circle, rgba(186, 230, 253, 0.9) 0 2px, transparent 3px), radial-gradient(circle, rgba(59, 130, 246, 0.75) 0 1.5px, transparent 2.5px), radial-gradient(circle, rgba(224, 242, 254, 0.65) 0 1px, transparent 2px);
+								background-size: 73px 67px, 47px 53px, 31px 37px;
+								background-position: 0 0, 19px 11px, 7px 23px;
+								mask-image: radial-gradient(ellipse at 50% 25%, black 15%, rgba(0,0,0,0.85) 55%, transparent 100%);
+								animation: disco-drift 24s linear infinite;
+							}
+							.monitor-light-beam {
+								background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.18), transparent);
+								filter: blur(12px);
+								transform-origin: top center;
+							}
+							@keyframes disco-drift {
+								from { background-position: 0 0, 19px 11px, 7px 23px; }
+								to { background-position: 73px 67px, -28px 64px, 38px -14px; }
+							}
 							@keyframes wave { 0%, 100% { height: 4px; } 50% { height: 16px; } }
 							.animate-wave-1 { animation: wave 1s ease-in-out infinite; }
 							.animate-wave-2 { animation: wave 1.2s ease-in-out infinite; }
 							.animate-wave-3 { animation: wave 0.8s ease-in-out infinite; }
 							.animate-spin-slow { animation: spin 4s linear infinite; }
 						`}</style>
-						<div className="fixed inset-0 z-50 bg-[#0b0c10] text-white flex p-8 gap-10 box-border overflow-hidden">
+					<div className="fixed inset-0 z-50 bg-[#020817] text-slate-100 flex p-8 gap-10 box-border overflow-hidden">
 							{/* Background Grid & Gradients */}
-							<div className="absolute inset-0 monitor-bg-grid opacity-60 pointer-events-none"></div>
-							<div className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ background: 'radial-gradient(circle at 80% 20%, rgba(236,72,153,0.15) 0%, transparent 40%), radial-gradient(circle at 20% 80%, rgba(34,211,238,0.1) 0%, transparent 40%)' }}></div>
+						<div className="absolute inset-0 monitor-bg-pattern pointer-events-none"></div>
+						<div className="absolute inset-0 monitor-disco-dots opacity-65 pointer-events-none"></div>
+						<div className="monitor-light-beam absolute -top-16 left-[13%] w-28 h-[120%] -rotate-[20deg] pointer-events-none"></div>
+						<div className="monitor-light-beam absolute -top-16 right-[10%] w-32 h-[120%] rotate-[22deg] pointer-events-none"></div>
 
 							{/* Close Button to return to normal mode */}
 							<button type="button" onClick={() => setMode('customer')} className="absolute top-4 right-4 z-50 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer text-white backdrop-blur-md">
@@ -1449,11 +1461,10 @@ function App() {
 							</button>
 
 							{/* ================= 左側：QRコードエリア (30%) ================= */}
-							<div className="w-[30%] bg-black/50 backdrop-blur-xl border border-white/10 rounded-[40px] flex flex-col items-center justify-center p-12 shadow-[0_0_40px_rgba(0,0,0,0.8)] relative overflow-hidden">
-								<div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-cyan-400 to-blue-600"></div>
+						<div className="w-[30%] bg-transparent border border-sky-300/25 rounded-[36px] flex flex-col items-center justify-center p-12 relative overflow-hidden">
+							<div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-700 via-sky-300 to-blue-700"></div>
 								
-								<div className="bg-white p-5 rounded-[32px] mb-10 monitor-box-glow-pink relative">
-									<div className="absolute -inset-1 bg-gradient-to-r from-pink-500 to-cyan-500 rounded-[36px] blur opacity-30 animate-pulse"></div>
+							<div className="bg-white p-5 rounded-[28px] mb-10 shadow-[0_18px_55px_rgba(14,165,233,0.28)] relative">
 									{qrImage ? (
 										<img src={qrImage} alt="QR Code" className="w-64 h-64 rounded-2xl relative z-10" />
 									) : (
@@ -1464,15 +1475,15 @@ function App() {
 								</div>
 
 								{qrUrl && (
-									<a href={qrUrl} className="relative z-10 mb-6 block w-full break-all text-xs text-cyan-300 underline">
+								<a href={qrUrl} className="relative z-10 mb-6 block w-full break-all text-xs text-sky-300/70 underline">
 										{qrUrl}
 									</a>
 								)}
-								<h2 className="text-4xl font-black text-white mb-4 tracking-wider">スマホで注文！</h2>
-								<p className="text-lg text-zinc-400 font-bold mb-6">Scan QR for Order</p>
+							<h2 className="text-4xl font-black font-serif text-white mb-4 tracking-wider">スマホで注文！</h2>
+							<p className="text-lg text-sky-100/55 font-semibold mb-6 tracking-wide">Scan QR for Order</p>
 								
-								<div className="px-8 py-4 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-400/50 rounded-full">
-									<p className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-400 monitor-text-glow-cyan tracking-widest">ORDER HERE!</p>
+							<div className="px-8 py-4 bg-white/10 border border-sky-200/35 rounded-2xl shadow-lg backdrop-blur-md">
+								<p className="text-3xl font-black font-serif text-sky-100 tracking-[0.14em]">ORDER HERE</p>
 								</div>
 							</div>
 
@@ -1481,11 +1492,11 @@ function App() {
 								{/* ① ヘッダー部 */}
 								<div className="flex justify-between items-start mb-8 pl-2">
 									<div>
-										<div className="inline-flex items-center gap-2 bg-pink-500/10 border border-pink-500/40 px-4 py-1.5 rounded-full mb-4 shadow-[0_0_15px_rgba(236,72,153,0.3)]">
-											<span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse"></span>
-											<span className="text-pink-400 font-bold text-sm tracking-widest">MUSIC LOUNGE</span>
+									<div className="inline-flex items-center gap-2 bg-blue-950/65 border border-sky-300/30 px-4 py-1.5 rounded-full mb-4 shadow-lg backdrop-blur-md">
+										<span className="w-2 h-2 rounded-full bg-sky-200"></span>
+										<span className="text-sky-100 font-bold text-sm tracking-widest">MUSIC LOUNGE</span>
 										</div>
-										<h1 className="text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-pink-200 to-pink-500 drop-shadow-[0_0_20px_rgba(236,72,153,0.5)]">
+									<h1 className="text-7xl font-black font-serif tracking-tight text-white drop-shadow-[0_8px_30px_rgba(14,165,233,0.28)]">
 											Tech Club
 										</h1>
 									</div>
@@ -1494,27 +1505,25 @@ function App() {
 								</div>
 
 								{/* ② ステータスボード部 */}
-								<div className="flex gap-8 flex-1 min-h-0">
+								<div className="flex gap-6 flex-1 min-h-0">
 									
 									{/* カラム1: PREPARING */}
-									<div className="flex-1 bg-black/40 backdrop-blur-xl border border-yellow-500/20 rounded-[32px] p-8 flex flex-col shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-										<h3 className="text-3xl font-black text-yellow-400 flex items-center gap-4 mb-8 monitor-text-glow-yellow">
-											<span className="w-4 h-4 rounded-full bg-yellow-400"></span>
-											PREPARING <span className="text-xl text-yellow-400/80">/ 準備中</span>
+									<div className="flex-1 bg-transparent border border-blue-300/25 rounded-[28px] p-8 flex flex-col relative overflow-hidden">
+										<div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500/80"></div>
+										<h3 className="text-3xl font-black font-serif text-blue-100 flex items-center gap-4 mb-8 tracking-wide">
+											<span className="w-3 h-3 rounded-full bg-blue-300"></span>
+											PREPARING <span className="text-lg text-blue-200/55 font-sans tracking-normal">/ 準備中</span>
 										</h3>
 										
-										<div className="flex flex-col gap-5 overflow-y-auto custom-scrollbar pr-2 pb-2">
+										<div className="grid grid-cols-2 2xl:grid-cols-3 gap-5 overflow-y-auto custom-scrollbar pr-2 pb-2">
 											{preparingOrders.length === 0 ? (
-												<div className="flex items-center justify-center h-40 text-zinc-600 font-medium">
+												<div className="col-span-full flex items-center justify-center h-40 text-blue-100/25 font-medium">
 													準備中のオーダーはありません
 												</div>
 											) : (
 												preparingOrders.map((order) => (
-													<div key={order.id} className="bg-white/5 border border-white/10 rounded-2xl p-5 flex items-center gap-6">
-														<span className="text-5xl font-black text-white w-24">#{order.id}</span>
-														<span className="text-xl font-bold text-zinc-300">
-															{order.order_items?.map((item) => item.menu.name.split(" (")[0]).join(", ")}
-														</span>
+											<div key={order.id} className="bg-blue-950/90 border border-blue-300/30 rounded-2xl p-5 min-h-32 flex items-center justify-center shadow-[0_12px_28px_rgba(0,0,0,0.32)]">
+														<span className="w-full text-center font-mono tabular-nums text-6xl font-black leading-none text-blue-100">{order.id}</span>
 													</div>
 												))
 											)}
@@ -1522,26 +1531,23 @@ function App() {
 									</div>
 
 									{/* カラム2: READY TO PICK UP */}
-									<div className="flex-1 bg-black/40 backdrop-blur-xl border border-pink-500/40 rounded-[32px] p-8 flex flex-col shadow-[0_0_40px_rgba(236,72,153,0.15)] relative overflow-hidden">
-										<div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-pink-600 to-purple-600"></div>
+									<div className="flex-1 bg-transparent border border-sky-200/35 rounded-[28px] p-8 flex flex-col relative overflow-hidden">
+										<div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-sky-300 via-white to-sky-300"></div>
 
-										<h3 className="text-3xl font-black text-pink-400 flex items-center gap-4 mb-8 monitor-text-glow-pink animate-pulse">
-											<span className="w-4 h-4 rounded-full bg-pink-400 animate-ping"></span>
-											READY <span className="text-xl text-pink-400/80">/ お呼び出し</span>
+										<h3 className="text-3xl font-black font-serif text-white flex items-center gap-4 mb-8 tracking-wide">
+											<span className="w-3 h-3 rounded-full bg-white"></span>
+											READY <span className="text-lg text-sky-100/65 font-sans tracking-normal">/ お呼び出し</span>
 										</h3>
 
-										<div className="flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2 pb-2">
+										<div className="grid grid-cols-2 2xl:grid-cols-3 gap-6 overflow-y-auto custom-scrollbar pr-2 pb-2">
 											{readyOrders.length === 0 ? (
-												<div className="flex items-center justify-center h-40 text-zinc-600 font-medium">
+												<div className="col-span-full flex items-center justify-center h-40 text-sky-100/25 font-medium">
 													お呼び出し中のオーダーはありません
 												</div>
 											) : (
-												readyOrders.map((order, idx) => (
-													<div key={order.id} className="bg-pink-950/40 border border-pink-500/50 rounded-[24px] p-6 flex items-center gap-8 monitor-box-glow-pink relative">
-														<span className={`text-6xl md:text-7xl font-black text-pink-400 monitor-text-glow-pink w-32 ${idx === 0 ? 'animate-pulse' : ''}`}>#{order.id}</span>
-														<span className="text-2xl md:text-3xl font-bold text-white">
-															{order.order_items?.map((item) => item.menu.name.split(" (")[0]).join(", ")}
-														</span>
+												readyOrders.map((order) => (
+											<div key={order.id} className="bg-[#16365f]/90 border border-sky-100/45 rounded-2xl p-6 min-h-36 flex items-center justify-center shadow-[0_14px_35px_rgba(0,0,0,0.36)] relative">
+														<span className="w-full text-center font-mono tabular-nums text-6xl md:text-7xl font-black leading-none text-white">{order.id}</span>
 													</div>
 												))
 											)}
@@ -1549,7 +1555,7 @@ function App() {
 										
 										{readyOrders.length > 0 && (
 											<div className="mt-auto text-center pt-4">
-												<p className="text-pink-300/60 font-bold text-lg animate-pulse tracking-widest">
+												<p className="font-serif text-sky-100/70 font-bold text-lg tracking-[0.16em]">
 													&gt;&gt;&gt; PLEASE COME TO THE COUNTER &lt;&lt;&lt;
 												</p>
 											</div>
