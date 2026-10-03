@@ -1434,13 +1434,44 @@ function App() {
 								animation: disco-drift 24s linear infinite;
 							}
 							.monitor-light-beam {
-								background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.18), transparent);
-								filter: blur(12px);
-								transform-origin: top center;
+								background: linear-gradient(90deg, transparent 0%, rgba(56, 189, 248, 0.08) 14%, rgba(186, 230, 253, 0.42) 50%, rgba(56, 189, 248, 0.08) 86%, transparent 100%);
+								filter: blur(10px);
+								mix-blend-mode: screen;
+								transform-origin: bottom center;
+								will-change: transform, opacity;
+							}
+							.monitor-light-beam-left {
+								animation: beam-sweep-left 7s ease-in-out infinite alternate;
+							}
+							.monitor-light-beam-right {
+								animation: beam-sweep-right 8.5s ease-in-out -2.5s infinite alternate;
+							}
+							.monitor-light-beam-center {
+								animation: beam-sweep-center 8s ease-in-out -1.5s infinite alternate;
 							}
 							@keyframes disco-drift {
 								from { background-position: 0 0, 19px 11px, 7px 23px; }
 								to { background-position: 73px 67px, -28px 64px, 38px -14px; }
+							}
+							@keyframes beam-sweep-left {
+								0% { transform: rotate(-26deg) scaleX(0.78); opacity: 0.62; }
+								45% { opacity: 0.95; }
+								100% { transform: rotate(-10deg) scaleX(1.22); opacity: 0.78; }
+							}
+							@keyframes beam-sweep-right {
+								0% { transform: rotate(26deg) scaleX(0.8); opacity: 0.68; }
+								55% { opacity: 0.98; }
+								100% { transform: rotate(10deg) scaleX(1.18); opacity: 0.76; }
+							}
+							@keyframes beam-sweep-center {
+								0% { transform: rotate(-7deg) scaleX(0.72); opacity: 0.44; }
+								50% { opacity: 0.74; }
+								100% { transform: rotate(7deg) scaleX(1.08); opacity: 0.56; }
+							}
+							@media (prefers-reduced-motion: reduce) {
+								.monitor-light-beam-left { animation: none; transform: rotate(-18deg); }
+								.monitor-light-beam-center { animation: none; transform: rotate(0deg); }
+								.monitor-light-beam-right { animation: none; transform: rotate(18deg); }
 							}
 							@keyframes wave { 0%, 100% { height: 4px; } 50% { height: 16px; } }
 							.animate-wave-1 { animation: wave 1s ease-in-out infinite; }
@@ -1452,19 +1483,21 @@ function App() {
 							{/* Background Grid & Gradients */}
 						<div className="absolute inset-0 monitor-bg-pattern pointer-events-none"></div>
 						<div className="absolute inset-0 monitor-disco-dots opacity-65 pointer-events-none"></div>
-						<div className="monitor-light-beam absolute -top-16 left-[13%] w-28 h-[120%] -rotate-[20deg] pointer-events-none"></div>
-						<div className="monitor-light-beam absolute -top-16 right-[10%] w-32 h-[120%] rotate-[22deg] pointer-events-none"></div>
-
-							{/* Close Button to return to normal mode */}
-							<button type="button" onClick={() => setMode('customer')} className="absolute top-4 right-4 z-50 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer text-white backdrop-blur-md">
-								<X size={24} />
-							</button>
+						<div className="monitor-light-beam monitor-light-beam-left absolute bottom-[-5%] left-[calc(36%_-_6.5rem)] w-52 h-[155%] pointer-events-none"></div>
+						<div className="monitor-light-beam monitor-light-beam-center absolute bottom-[-5%] left-[calc(50%_-_6.5rem)] w-52 h-[155%] pointer-events-none"></div>
+						<div className="monitor-light-beam monitor-light-beam-right absolute bottom-[-5%] left-[calc(64%_-_6.5rem)] w-52 h-[155%] pointer-events-none"></div>
+						<h1 className="absolute top-8 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap text-7xl font-black font-serif tracking-tight text-white drop-shadow-[0_8px_30px_rgba(14,165,233,0.28)]">
+							Tech Club
+						</h1>
 
 							{/* ================= 左側：QRコードエリア (30%) ================= */}
-						<div className="w-[30%] bg-transparent border border-sky-300/25 rounded-[36px] flex flex-col items-center justify-center p-12 relative overflow-hidden">
-							<div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-700 via-sky-300 to-blue-700"></div>
-								
-							<div className="bg-white p-5 rounded-[28px] mb-10 shadow-[0_18px_55px_rgba(14,165,233,0.28)] relative">
+						<div className="w-[30%] flex flex-col relative z-10">
+							<div className="h-[88px] shrink-0 mb-8" aria-hidden="true"></div>
+							<div className="flex-1 bg-transparent border-4 border-sky-200/40 rounded-[28px] flex flex-col items-center justify-center p-8 relative overflow-hidden">
+							<div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center">
+							<h2 className="text-4xl font-black font-serif text-white mb-8 tracking-wider">スマホで注文！</h2>
+
+							<div className="bg-white p-5 rounded-[28px] mb-8 shadow-[0_18px_55px_rgba(14,165,233,0.28)] relative">
 									{qrImage ? (
 										<img src={qrImage} alt="QR Code" className="w-64 h-64 rounded-2xl relative z-10" />
 									) : (
@@ -1479,37 +1512,25 @@ function App() {
 										{qrUrl}
 									</a>
 								)}
-							<h2 className="text-4xl font-black font-serif text-white mb-4 tracking-wider">スマホで注文！</h2>
-							<p className="text-lg text-sky-100/55 font-semibold mb-6 tracking-wide">Scan QR for Order</p>
-								
-							<div className="px-8 py-4 bg-white/10 border border-sky-200/35 rounded-2xl shadow-lg backdrop-blur-md">
-								<p className="text-3xl font-black font-serif text-sky-100 tracking-[0.14em]">ORDER HERE</p>
-								</div>
+							</div>
+							<div className="shrink-0 text-center pt-4">
+								<p className="font-serif text-sky-100/70 font-bold text-lg tracking-[0.16em]">
+									&gt;&gt;&gt; SCAN QR TO ORDER &lt;&lt;&lt;
+								</p>
+							</div>
+							</div>
 							</div>
 
 							{/* ================= 右側：オーダー状況エリア (70%) ================= */}
 							<div className="w-[70%] flex flex-col relative z-10">
 								{/* ① ヘッダー部 */}
-								<div className="flex justify-between items-start mb-8 pl-2">
-									<div>
-									<div className="inline-flex items-center gap-2 bg-blue-950/65 border border-sky-300/30 px-4 py-1.5 rounded-full mb-4 shadow-lg backdrop-blur-md">
-										<span className="w-2 h-2 rounded-full bg-sky-200"></span>
-										<span className="text-sky-100 font-bold text-sm tracking-widest">MUSIC LOUNGE</span>
-										</div>
-									<h1 className="text-7xl font-black font-serif tracking-tight text-white drop-shadow-[0_8px_30px_rgba(14,165,233,0.28)]">
-											Tech Club
-										</h1>
-									</div>
-
-									{/* NOW PLAYING Widget removed */}
-								</div>
+								<div className="h-[88px] shrink-0 mb-8" aria-hidden="true"></div>
 
 								{/* ② ステータスボード部 */}
 								<div className="flex gap-6 flex-1 min-h-0">
 									
 									{/* カラム1: PREPARING */}
-									<div className="flex-1 bg-transparent border border-blue-300/25 rounded-[28px] p-8 flex flex-col relative overflow-hidden">
-										<div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500/80"></div>
+									<div className="flex-1 bg-transparent border-4 border-blue-300/35 rounded-[28px] p-8 flex flex-col relative overflow-hidden">
 										<h3 className="text-3xl font-black font-serif text-blue-100 flex items-center gap-4 mb-8 tracking-wide">
 											<span className="w-3 h-3 rounded-full bg-blue-300"></span>
 											PREPARING <span className="text-lg text-blue-200/55 font-sans tracking-normal">/ 準備中</span>
@@ -1522,32 +1543,37 @@ function App() {
 												</div>
 											) : (
 												preparingOrders.map((order) => (
-											<div key={order.id} className="bg-blue-950/90 border border-blue-300/30 rounded-2xl p-5 min-h-32 flex items-center justify-center shadow-[0_12px_28px_rgba(0,0,0,0.32)]">
-														<span className="w-full text-center font-mono tabular-nums text-6xl font-black leading-none text-blue-100">{order.id}</span>
+											<div key={order.id} className="bg-gradient-to-br from-[#466b9f]/95 via-[#304b78]/95 to-[#182a4e]/95 border-2 border-[#a8d8f0]/65 rounded-2xl p-5 min-h-32 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_16px_36px_rgba(0,0,0,0.48)]">
+													<span className="w-full text-center font-mono tabular-nums text-6xl font-black leading-none tracking-[0.03em] text-transparent [-webkit-text-fill-color:transparent] [-webkit-text-stroke:2px_#effcff] [filter:drop-shadow(0_0_3px_rgba(245,253,255,0.9))_drop-shadow(0_0_7px_rgba(56,189,248,0.72))_drop-shadow(0_0_14px_rgba(37,99,235,0.5))]">{order.id}</span>
 													</div>
 												))
 											)}
 										</div>
+										{preparingOrders.length > 0 && (
+											<div className="mt-auto text-center pt-4">
+												<p className="font-serif text-sky-100/70 font-bold text-lg tracking-[0.16em]">
+													&gt;&gt;&gt; YOUR ORDER IS BEING PREPARED &lt;&lt;&lt;
+												</p>
+											</div>
+										)}
 									</div>
 
 									{/* カラム2: READY TO PICK UP */}
-									<div className="flex-1 bg-transparent border border-sky-200/35 rounded-[28px] p-8 flex flex-col relative overflow-hidden">
-										<div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-sky-300 via-white to-sky-300"></div>
-
+									<div className="flex-1 bg-transparent border-4 border-sky-200/40 rounded-[28px] p-8 flex flex-col relative overflow-hidden">
 										<h3 className="text-3xl font-black font-serif text-white flex items-center gap-4 mb-8 tracking-wide">
 											<span className="w-3 h-3 rounded-full bg-white"></span>
 											READY <span className="text-lg text-sky-100/65 font-sans tracking-normal">/ お呼び出し</span>
 										</h3>
 
-										<div className="grid grid-cols-2 2xl:grid-cols-3 gap-6 overflow-y-auto custom-scrollbar pr-2 pb-2">
+										<div className="grid grid-cols-2 2xl:grid-cols-3 gap-5 overflow-y-auto custom-scrollbar pr-2 pb-2">
 											{readyOrders.length === 0 ? (
 												<div className="col-span-full flex items-center justify-center h-40 text-sky-100/25 font-medium">
 													お呼び出し中のオーダーはありません
 												</div>
 											) : (
 												readyOrders.map((order) => (
-											<div key={order.id} className="bg-[#16365f]/90 border border-sky-100/45 rounded-2xl p-6 min-h-36 flex items-center justify-center shadow-[0_14px_35px_rgba(0,0,0,0.36)] relative">
-														<span className="w-full text-center font-mono tabular-nums text-6xl md:text-7xl font-black leading-none text-white">{order.id}</span>
+											<div key={order.id} className="bg-gradient-to-br from-[#466b9f]/95 via-[#304b78]/95 to-[#182a4e]/95 border-2 border-[#a8d8f0]/65 rounded-2xl p-5 min-h-32 flex items-center justify-center shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_16px_36px_rgba(0,0,0,0.48)]">
+													<span className="w-full text-center font-mono tabular-nums text-6xl font-black leading-none tracking-[0.03em] text-transparent [-webkit-text-fill-color:transparent] [-webkit-text-stroke:2px_#effcff] [filter:drop-shadow(0_0_3px_rgba(245,253,255,0.9))_drop-shadow(0_0_7px_rgba(56,189,248,0.72))_drop-shadow(0_0_14px_rgba(37,99,235,0.5))]">{order.id}</span>
 													</div>
 												))
 											)}
