@@ -3,7 +3,7 @@ import { CartTray } from "../components/customer/cart/CartTray";
 import { CustomerBackground } from "../components/customer/CustomerBackground";
 import { CustomerError } from "../components/customer/CustomerError";
 import { CustomerHeader } from "../components/customer/CustomerHeader";
-import { MenuGrid } from "../components/customer/MenuGrid";
+import { MenuGrid } from "../components/customer/menu/MenuGrid";
 import { OrderAccessNotice } from "../components/customer/order/OrderAccessNotice";
 import { OrderSuccessModal } from "../components/customer/order/OrderSuccessModal";
 import { OrderTracking } from "../components/customer/order/OrderTracking";
