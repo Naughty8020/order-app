@@ -1,3 +1,4 @@
+import { getApiBase } from "../api/base";
 import { createFileRoute } from "@tanstack/react-router";
 import {
 	AlertCircle,
@@ -97,13 +98,6 @@ function App() {
 	// Track newly called ready orders to trigger a visual or sound alert
 	const prevReadyIdsRef = useRef<number[]>([]);
 
-	// Dynamic API Base Resolver
-	const getApiBase = () => {
-		if (typeof window !== "undefined") {
-			return `http://${window.location.hostname}:8080/api`;
-		}
-		return "http://localhost:8080/api";
-	};
 	const API_BASE = getApiBase();
 
 	useEffect(() => {

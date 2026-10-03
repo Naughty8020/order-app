@@ -1,3 +1,5 @@
+import { getApiBase } from "./base";
+
 type LoginRequest = {
   username: string
   password: string
@@ -5,14 +7,13 @@ type LoginRequest = {
 
 export async function createSession(data: LoginRequest) {
   const response = await fetch(
-    'http://localhost:8080/api/order-access/session',
+    `${getApiBase()}/login`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ userName: data.username, password: data.password }),
     },
   )
 

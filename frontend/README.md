@@ -1,3 +1,12 @@
+## API接続先（ローカル・本番）
+
+- ローカルの `bun run dev` は設定なしで `http://<画面のホスト名>:8080/api` に接続します。
+- 別のAPIへ接続する場合は `.env.example` を `.env.local` にコピーし、`VITE_API_BASE_URL` を設定して開発サーバーを再起動します。
+- Cloudflareではビルド環境変数に `VITE_API_BASE_URL=https://order-app-production-7700.up.railway.app/api` を設定して再ビルド・デプロイしてください（末尾の `/api` が必要）。実行時だけの設定では反映されません。
+- 本番ビルドで未設定の場合は同一オリジンの `/api` を使用します。CloudflareとRailwayを分ける構成では必ず上記URLを指定してください。
+- RailwayのGoサービスには `FRONTEND_ORIGINS=https://フロントの公開ドメイン` を設定します（パス・末尾スラッシュなし）。複数のURLはカンマ区切りです。
+- スマートフォンでローカル確認する場合は、開発PCのLAN IPでフロントを開き、バックエンドの `FRONTEND_ORIGINS` にそのURLを追加してDocker Composeを再作成してください。QRにも画面を開いたオリジンが使われます。
+
 Welcome to your new TanStack Start app! 
 
 # Getting Started

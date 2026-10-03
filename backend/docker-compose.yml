@@ -18,7 +18,7 @@ services:
       - ADMIN_USERNAME=${ADMIN_USERNAME:-}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
       - JWT_SECRET=${JWT_SECRET:-}
-      - FRONTEND_ORIGINS=http://localhost:3000
+      - FRONTEND_ORIGINS=${FRONTEND_ORIGINS:-http://localhost:3000}
     depends_on:
       db:
         condition: service_healthy
