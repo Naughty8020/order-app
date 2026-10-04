@@ -12,6 +12,7 @@ import (
 	menuDB "order-system/infra/db/menu"
 	orderDB "order-system/infra/db/order"
 	orderSessionDB "order-system/infra/db/ordersession"
+	"order-system/middleware"
 	menuUsecase "order-system/usecase/menu"
 	orderUsecase "order-system/usecase/order"
 	orderSessionUsecase "order-system/usecase/ordersession"
@@ -31,6 +32,15 @@ func Run(db *gorm.DB) error {
 		return errors.New("ORDER_ACCESS_SECRET must be set")
 	}
 
+	secret := os.Getenv("JWT_SECRET")
+	adminUsername := os.Getenv("ADMIN_USERNAME")
+
+	if secret == "" || adminUsername == "" {
+		return errors.New("JWT_SECRET and ADMIN_USERNAME must be set")
+	}
+
+	auth := middleware.NewAuthMiddleware(db, secret, adminUsername)
+
 	r := gin.Default()
 	allowedOrigins := []string{"http://localhost:3000"}
 	if configured := os.Getenv("FRONTEND_ORIGINS"); configured != "" {
@@ -45,7 +55,7 @@ func Run(db *gorm.DB) error {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: allowedOrigins,
 		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders: []string{"Origin", "Content-Type", "X-Order-Session"},
+		AllowHeaders: []string{"Origin", "Content-Type", "X-Order-Session", "Authorization"},
 	}))
 
 	sessionRepo := orderSessionDB.NewOrderSessionRepository(db)
@@ -79,22 +89,22 @@ func Run(db *gorm.DB) error {
 
 	menuGroup := r.Group("/api/menus")
 	{
-		menuGroup.POST("", menuHandler.CreateMenu)
 		menuGroup.GET("", menuHandler.GetMenus)
-		menuGroup.PUT("/:id", menuHandler.UpdateMenu)
-		menuGroup.DELETE("/:id", menuHandler.DeleteMenu)
+		menuGroup.POST("", auth.RequireAdmin, menuHandler.CreateMenu)
+		menuGroup.PUT("/:id", auth.RequireAdmin, menuHandler.UpdateMenu)
+		menuGroup.DELETE("/:id", auth.RequireAdmin, menuHandler.DeleteMenu)
 	}
 
 	orderGroup := r.Group("/api/orders")
 	{
 		orderGroup.POST("", accessHandler.RequireOrderSession, orderHandler.CreateOrder)
 		orderGroup.GET("", orderHandler.GetOrders)
-		orderGroup.PUT("/:id/status", orderHandler.UpdateOrderStatus)
+		orderGroup.PUT("/:id/status", auth.RequireAdmin, orderHandler.UpdateOrderStatus)
 	}
 
 	accessGroup := r.Group("/api/order-access")
 	{
-		accessGroup.GET("/qr", accessHandler.GetQRToken)
+		accessGroup.GET("/qr", auth.RequireAdmin, accessHandler.GetQRToken)
 		accessGroup.POST("/session", accessHandler.CreateSession)
 	}
 	r.POST("/api/login", loginHandler.Login)
