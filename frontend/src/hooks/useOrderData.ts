@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getMenus } from "../../api/menu";
-import { getOrders, type Order } from "../../api/order";
-import type { Menu } from "../../cart";
-export function useCustomerData() {
+import { getMenus } from "../api/menu";
+import { getOrders, type Order } from "../api/order";
+import type { Menu } from "../cart";
+export function useOrderData(onReady?: (ids: number[]) => void) {
 	const [menus, setMenus] = useState<Menu[]>([]);
 	const [orders, setOrders] = useState<Order[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -21,6 +21,10 @@ export function useCustomerData() {
 			const currentReadyIds = newOrders
 				.filter((o: Order) => o.status === "ready")
 				.map((o: Order) => o.id);
+			const newlyReady = currentReadyIds.filter(
+				(id) => !prevReadyIdsRef.current.includes(id),
+			);
+			if (newlyReady.length > 0) onReady?.(newlyReady);
 			prevReadyIdsRef.current = currentReadyIds;
 		} catch (err: unknown) {
 			console.error(err);
@@ -32,7 +36,7 @@ export function useCustomerData() {
 		} finally {
 			setLoading(false);
 		}
-	}, []);
+	}, [onReady]);
 
 	useEffect(() => {
 		fetchData();
@@ -67,5 +71,21 @@ export function useCustomerData() {
 		return () => clearInterval(interval);
 	}, [fetchData]);
 
-	return { menus, orders, setOrders, loading, setLoading, error, fetchData };
+	const refreshMenus = useCallback(async () => {
+		setMenus(await getMenus());
+	}, []);
+	const refreshOrders = useCallback(async () => {
+		setOrders(await getOrders());
+	}, []);
+	return {
+		menus,
+		orders,
+		setOrders,
+		loading,
+		setLoading,
+		error,
+		fetchData,
+		refreshMenus,
+		refreshOrders,
+	};
 }

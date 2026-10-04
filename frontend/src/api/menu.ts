@@ -7,3 +7,31 @@ export async function getMenus(): Promise<Menu[]> {
 	const data: { data?: Menu[] } = await response.json();
 	return data.data || [];
 }
+
+export async function createMenu(menu: Omit<Menu, "id">): Promise<void> {
+	const response = await fetch(`${getApiBase()}/menus`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(menu),
+	});
+	if (!response.ok) throw new Error("メニューの作成に失敗しました");
+}
+
+export async function updateMenuAvailability(
+	id: number,
+	isAvailable: boolean,
+): Promise<void> {
+	const response = await fetch(`${getApiBase()}/menus/${id}`, {
+		method: "PUT",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ is_available: isAvailable }),
+	});
+	if (!response.ok) throw new Error("更新に失敗しました");
+}
+
+export async function deleteMenu(id: number): Promise<void> {
+	const response = await fetch(`${getApiBase()}/menus/${id}`, {
+		method: "DELETE",
+	});
+	if (!response.ok) throw new Error("削除に失敗しました");
+}

@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { createOrder, getOrders } from "../../api/order";
+import { useOrderData } from "../useOrderData";
 import { useToast } from "../useToast";
 import { useCart } from "./useCart";
-import { useCustomerData } from "./useCustomerData";
 import { useOrderSession } from "./useOrderSession";
-export function useCustomerOrder() {
+export function useCustomerOrder(notifyReady = false) {
 	const {
 		orderSession,
 		orderAccessStatus,
@@ -21,8 +21,27 @@ export function useCustomerOrder() {
 		updateCartQty,
 		removeFromCart,
 	} = useCart(showToast);
-	const { menus, orders, setOrders, loading, setLoading, error, fetchData } =
-		useCustomerData();
+	const onReady = useCallback(
+		(ids: number[]) => {
+			if (notifyReady)
+				showToast(
+					`オーダー番号 #${ids.join(", #")} ができあがりました！`,
+					"info",
+				);
+		},
+		[notifyReady, showToast],
+	);
+	const {
+		menus,
+		orders,
+		setOrders,
+		loading,
+		setLoading,
+		error,
+		fetchData,
+		refreshMenus,
+		refreshOrders,
+	} = useOrderData(onReady);
 	const [successModal, setSuccessModal] = useState<{
 		show: boolean;
 		orderId: number | null;
@@ -79,6 +98,9 @@ export function useCustomerOrder() {
 	};
 
 	return {
+		showToast,
+		refreshMenus,
+		refreshOrders,
 		menus,
 		orders,
 		cart,

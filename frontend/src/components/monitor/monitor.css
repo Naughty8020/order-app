@@ -1,0 +1,141 @@
+.monitor-bg-pattern {
+	background-image:
+		radial-gradient(
+			circle at 50% -10%,
+			rgba(56, 189, 248, 0.3),
+			transparent 36%
+		),
+		linear-gradient(180deg, rgba(10, 32, 72, 0.45), rgba(1, 6, 20, 0.95));
+}
+.monitor-disco-dots {
+	background-image:
+		radial-gradient(circle, rgba(186, 230, 253, 0.9) 0 2px, transparent 3px),
+		radial-gradient(circle, rgba(59, 130, 246, 0.75) 0 1.5px, transparent 2.5px),
+		radial-gradient(circle, rgba(224, 242, 254, 0.65) 0 1px, transparent 2px);
+	background-size:
+		73px 67px,
+		47px 53px,
+		31px 37px;
+	background-position:
+		0 0,
+		19px 11px,
+		7px 23px;
+	mask-image: radial-gradient(
+		ellipse at 50% 25%,
+		black 15%,
+		rgba(0, 0, 0, 0.85) 55%,
+		transparent 100%
+	);
+	animation: disco-drift 24s linear infinite;
+}
+.monitor-light-beam {
+	background: linear-gradient(
+		90deg,
+		transparent 0%,
+		rgba(56, 189, 248, 0.08) 14%,
+		rgba(186, 230, 253, 0.42) 50%,
+		rgba(56, 189, 248, 0.08) 86%,
+		transparent 100%
+	);
+	filter: blur(10px);
+	mix-blend-mode: screen;
+	transform-origin: bottom center;
+	will-change: transform, opacity;
+}
+.monitor-light-beam-left {
+	animation: beam-sweep-left 7s ease-in-out infinite alternate;
+}
+.monitor-light-beam-right {
+	animation: beam-sweep-right 8.5s ease-in-out -2.5s infinite alternate;
+}
+.monitor-light-beam-center {
+	animation: beam-sweep-center 8s ease-in-out -1.5s infinite alternate;
+}
+@keyframes disco-drift {
+	from {
+		background-position:
+			0 0,
+			19px 11px,
+			7px 23px;
+	}
+	to {
+		background-position:
+			73px 67px,
+			-28px 64px,
+			38px -14px;
+	}
+}
+@keyframes beam-sweep-left {
+	0% {
+		transform: rotate(-26deg) scaleX(0.78);
+		opacity: 0.62;
+	}
+	45% {
+		opacity: 0.95;
+	}
+	100% {
+		transform: rotate(-10deg) scaleX(1.22);
+		opacity: 0.78;
+	}
+}
+@keyframes beam-sweep-right {
+	0% {
+		transform: rotate(26deg) scaleX(0.8);
+		opacity: 0.68;
+	}
+	55% {
+		opacity: 0.98;
+	}
+	100% {
+		transform: rotate(10deg) scaleX(1.18);
+		opacity: 0.76;
+	}
+}
+@keyframes beam-sweep-center {
+	0% {
+		transform: rotate(-7deg) scaleX(0.72);
+		opacity: 0.44;
+	}
+	50% {
+		opacity: 0.74;
+	}
+	100% {
+		transform: rotate(7deg) scaleX(1.08);
+		opacity: 0.56;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.monitor-light-beam-left {
+		animation: none;
+		transform: rotate(-18deg);
+	}
+	.monitor-light-beam-center {
+		animation: none;
+		transform: rotate(0deg);
+	}
+	.monitor-light-beam-right {
+		animation: none;
+		transform: rotate(18deg);
+	}
+}
+@keyframes wave {
+	0%,
+	100% {
+		height: 4px;
+	}
+	50% {
+		height: 16px;
+	}
+}
+.animate-wave-1 {
+	animation: wave 1s ease-in-out infinite;
+}
+.animate-wave-2 {
+	animation: wave 1.2s ease-in-out infinite;
+}
+.animate-wave-3 {
+	animation: wave 0.8s ease-in-out infinite;
+}
+.animate-spin-slow {
+	animation: spin 4s linear infinite;
+}

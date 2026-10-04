@@ -1,5 +1,16 @@
 import { getApiBase } from "./base";
 
+export interface OrderQRToken {
+	token: string;
+	expires_at: string;
+}
+
+export async function getQRToken(): Promise<OrderQRToken> {
+	const response = await fetch(`${getApiBase()}/order-access/qr`);
+	if (!response.ok) throw new Error("QRコードの発行に失敗しました");
+	return response.json();
+}
+
 export interface OrderSession {
 	token: string;
 	expiresAt: string;
