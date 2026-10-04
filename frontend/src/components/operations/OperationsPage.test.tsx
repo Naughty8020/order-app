@@ -33,6 +33,8 @@ beforeEach(() => {
 	vi.stubGlobal("fetch", fetchMock);
 	fetchMock.mockImplementation(async (input, init) => {
 		const url = String(input);
+		if (url.endsWith("/csrf-token"))
+			return Response.json({ csrfToken: "test-csrf" });
 		if (url.endsWith("/order-access/qr"))
 			return Response.json({
 				token: "qr-token",

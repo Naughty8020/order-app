@@ -1,3 +1,10 @@
+## ルーティングのアクセス制御
+
+`/staff` と `/monitor` はルーターの `beforeLoad` でログイン状態を確認します。未ログインなら `/login` に移動し、成功後は元のページへ戻ります。roleによるスタッフ操作の判定は行いません。`/`、`/login`、`/about` は公開です。
+HttpOnly Cookieによる認証とCSRFヘッダー送信に対応しています。
+バックエンド側の対応API・Cookie・CORS設定が必要です。[認証API接続仕様](./AUTH_CONTRACT.md)を参照してください。
+CloudflareとRailwayが別サイトの場合、第三者Cookie制限があるため、同一サイトのカスタムドメインまたは同一オリジンのAPIプロキシを推奨します。
+
 ## API接続先（ローカル・本番）
 
 - ローカルの `bun run dev` は設定なしで `http://<画面のホスト名>:8080/api` に接続します。

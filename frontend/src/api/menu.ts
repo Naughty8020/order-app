@@ -1,4 +1,5 @@
 import type { Menu } from "../cart";
+import { authenticatedFetch } from "./auth";
 import { getApiBase } from "./base";
 
 export async function getMenus(): Promise<Menu[]> {
@@ -9,7 +10,7 @@ export async function getMenus(): Promise<Menu[]> {
 }
 
 export async function createMenu(menu: Omit<Menu, "id">): Promise<void> {
-	const response = await fetch(`${getApiBase()}/menus`, {
+	const response = await authenticatedFetch("/menus", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(menu),
@@ -21,7 +22,7 @@ export async function updateMenuAvailability(
 	id: number,
 	isAvailable: boolean,
 ): Promise<void> {
-	const response = await fetch(`${getApiBase()}/menus/${id}`, {
+	const response = await authenticatedFetch(`/menus/${id}`, {
 		method: "PUT",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ is_available: isAvailable }),
@@ -30,7 +31,7 @@ export async function updateMenuAvailability(
 }
 
 export async function deleteMenu(id: number): Promise<void> {
-	const response = await fetch(`${getApiBase()}/menus/${id}`, {
+	const response = await authenticatedFetch(`/menus/${id}`, {
 		method: "DELETE",
 	});
 	if (!response.ok) throw new Error("削除に失敗しました");
