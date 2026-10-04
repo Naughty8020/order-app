@@ -1,4 +1,4 @@
-import type { Order } from "../../api/order";
+import type { Order } from "../api/order";
 export const getOrderTotal = (order: Order) => {
 	return order.order_items
 		? order.order_items.reduce(

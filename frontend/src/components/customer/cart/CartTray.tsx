@@ -1,3 +1,17 @@
+import type { Cart } from "../../../cart";
+import type { OrderAccessStatus } from "../../../hooks/customer/useOrderSession";
+
+interface Props {
+	cart: Cart;
+	isCartOpen: boolean;
+	setIsCartOpen: (open: boolean) => void;
+	updateCartQty: (menuId: number, delta: number) => void;
+	removeFromCart: (menuId: number) => void;
+	submitOrder: () => Promise<void>;
+	loading: boolean;
+	orderAccessStatus: OrderAccessStatus;
+}
+
 import {
 	Minus,
 	Plus,
@@ -7,10 +21,7 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import { getCartSummary } from "../../cart";
-import type { useCustomerOrder } from "./useCustomerOrder";
-
-type CustomerOrder = ReturnType<typeof useCustomerOrder>;
+import { getCartSummary } from "../../../cart";
 
 export function CartTray({
 	cart,
@@ -21,17 +32,7 @@ export function CartTray({
 	submitOrder,
 	loading,
 	orderAccessStatus,
-}: Pick<
-	CustomerOrder,
-	| "cart"
-	| "isCartOpen"
-	| "setIsCartOpen"
-	| "updateCartQty"
-	| "removeFromCart"
-	| "submitOrder"
-	| "loading"
-	| "orderAccessStatus"
->) {
+}: Props) {
 	const { total: cartTotal, count: cartCount } = getCartSummary(cart);
 	return (
 		<>
