@@ -1,6 +1,20 @@
 import type { Menu } from "../cart";
 import { getApiBase } from "./base";
 
+export type StaffOrderStatus = "ready" | "completed";
+
+export async function updateOrderStatus(
+	id: number,
+	status: StaffOrderStatus,
+): Promise<void> {
+	const response = await fetch(`${getApiBase()}/orders/${id}/status`, {
+		method: "PUT",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ status }),
+	});
+	if (!response.ok) throw new Error("ステータス更新に失敗しました");
+}
+
 export interface OrderItem {
 	id: number;
 	order_id: number;
@@ -45,9 +59,7 @@ export async function createOrder(
 		body: JSON.stringify(payload),
 	});
 	if (!response.ok) {
-		const data: { error?: string } = await response
-			.json()
-			.catch(() => ({}));
+		const data: { error?: string } = await response.json().catch(() => ({}));
 		return {
 			ok: false,
 			status: response.status,
