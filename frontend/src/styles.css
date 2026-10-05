@@ -463,6 +463,12 @@ a {
 }
 
 /* Customer lounge */
+.club-footer {
+  padding-bottom: calc(88px + max(12px, env(safe-area-inset-bottom, 0px)));
+}
+@media (min-width: 1024px) {
+  .club-footer { padding-bottom: 16px; }
+}
 .club-background { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 90% 20%,#6b146f33,transparent 50%),#090b1c; }
 .club-hero { position: relative; z-index: 1; width: 100%; min-height: 280px; background: linear-gradient(0deg,#090b1c,transparent 35%),linear-gradient(90deg,#100923aa,transparent 80%),url('/images/drinks/lounge.png') center 55% / cover; }
 .club-hero-content { max-width: 1400px; margin: auto; padding: 30px 32px 42px; }
@@ -485,7 +491,7 @@ a {
 .club-price { font-size:clamp(20px,3.5vw,30px); font-weight:800; color:#f560bf; line-height:1; }
 .club-add,.club-quantity { display:flex; align-items:center; justify-content:center; gap:6px; min-height:36px; border:1px solid #ec57db; border-radius:12px; background:linear-gradient(110deg,#652368aa,#6c235faa); color:white; font-size:13px; font-weight:700; }
 .club-add { padding:6px 12px; cursor:pointer; }
-.club-card-featured .club-add { background:linear-gradient(110deg,#ea36d6,#ac36b3); box-shadow:0 0 18px #e945ad55,inset 0 0 4px #ffa6f4; }
+.club-card-featured .club-add, .club-confirm { background:linear-gradient(110deg,#ea36d6,#ac36b3); box-shadow:0 0 18px #e945ad55,inset 0 0 4px #ffa6f4; }
 .club-add:hover { filter:brightness(1.2); }
 .club-quantity { gap:0; }
 .club-quantity button { display:flex; align-items:center; justify-content:center; min-width:32px; min-height:36px; cursor:pointer; }
@@ -496,7 +502,7 @@ a {
 .club-sold-out { color:#ffa3c0; font-size:11px; padding:8px; }
 .club-empty { color:#d5bbda; text-align:center; padding:48px 12px; }
 .club-skeleton { min-height:240px; background:linear-gradient(130deg,#282139,#161327); }
-.club-categories button:focus-visible,.club-card button:focus-visible { outline:2px solid #ff91e5; outline-offset:2px; }
+.club-categories button:focus-visible,.club-card button:focus-visible, .club-tray button:focus-visible { outline:2px solid #ff91e5; outline-offset:2px; }
 @media(min-width:640px) { .club-hero { min-height:340px; } .club-hero-content { padding:38px 48px 54px; } .club-menu-grid { gap:18px; } .club-card { border-radius:22px; } .club-card-content { padding:22px 20px 16px; margin-top:-40px; } .club-add { padding:8px 20px; min-height:44px; font-size:17px; } .club-card-badge { top:14px; left:12px; font-size:16px; } .club-categories { margin-bottom:22px; padding:10px; } }
 @media(max-width:359px) { .club-categories button { gap:3px; } .club-categories svg { width:16px; } .club-card-content { padding-left:8px; padding-right:8px; } .club-add { padding:6px 8px; } }
 @media(max-width:639px) {
@@ -512,3 +518,29 @@ a {
  .club-categories button { font-size:9px; gap:2px; }
  .club-categories svg { width:14px; }
 }
+
+.club-tray {
+  background: linear-gradient(145deg, rgba(40, 27, 57, .98), rgba(20, 17, 36, .98));
+  border: 1px solid #ec57db55;
+  box-shadow: 0 -8px 40px #12091d66, 0 0 24px #e945ad18, inset 0 1px 1px #ffffff12;
+}
+.club-tray-item {
+  background: linear-gradient(120deg, #32233d99, #211c32);
+  border: 1px solid #a76aaf40;
+}
+.club-tray-icon {
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  color: #d5bbda;
+  background: #a245a51a;
+  border: 1px solid #ec57db33;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.club-tray-icon:hover { color: white; background: #a245a544; }
+.club-tray .club-confirm { min-height: 52px; font-size: 14px; font-weight: 800; gap: 8px; border-radius: 14px; }
+.club-confirm:disabled:hover { filter: none; }
+.club-confirm:disabled { box-shadow: none; }
