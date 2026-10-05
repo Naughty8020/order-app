@@ -45,7 +45,7 @@ export function CartTray({
 					onClick={() => setIsCartOpen(true)}
 					aria-label={`カートを見る（${cartCount}点、合計¥${cartTotal.toLocaleString()}）`}
 					aria-expanded={isCartOpen}
-					className="lg:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-4 right-4 z-40 flex min-h-[64px] items-center gap-3 rounded-full border-2 border-[#ff76d7] bg-[linear-gradient(105deg,#7616aa_0%,#a918a5_35%,#ff288b_65%,#ff9369_100%)] py-1.5 pl-2 pr-4 text-white shadow-[0_0_24px_rgba(236,72,153,0.4),inset_0_1px_2px_rgba(255,255,255,0.35)] transition-transform hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#ff76d7] cursor-pointer sm:left-6 sm:right-6 sm:gap-4 sm:pr-6"
+					className="lg:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-4 right-4 z-40 flex min-h-[64px] items-center gap-2 rounded-full border-2 border-[#ff76d7] bg-[linear-gradient(105deg,#7616aa_0%,#a918a5_35%,#ff288b_65%,#ff9369_100%)] py-1.5 pl-2 pr-3 text-white shadow-[0_0_24px_rgba(236,72,153,0.4),inset_0_1px_2px_rgba(255,255,255,0.35)] transition-transform hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#ff76d7] cursor-pointer sm:left-6 sm:right-6 sm:gap-4 sm:pr-6"
 				>
 					<span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#420c70]/60">
 						<ShoppingCart size={27} strokeWidth={1.8} aria-hidden="true" />
@@ -55,11 +55,11 @@ export function CartTray({
 							</span>
 						)}
 					</span>
-					<span className="flex-1 whitespace-nowrap text-left text-[15px] font-extrabold tracking-wide sm:text-lg">
+					<span className="flex-1 whitespace-nowrap text-left text-[13px] font-extrabold sm:text-lg">
 						カートを見る
 					</span>
-					<span className="flex min-h-8 shrink-0 items-center gap-2 border-l border-white/30 pl-3 sm:gap-4 sm:pl-6">
-						<span className="whitespace-nowrap text-lg font-extrabold tabular-nums sm:text-xl">
+					<span className="flex min-h-8 shrink-0 items-center gap-1 border-l border-white/30 pl-2 sm:gap-4 sm:pl-6">
+						<span className="whitespace-nowrap text-base font-extrabold tabular-nums sm:text-xl">
 							¥{cartTotal.toLocaleString()}
 						</span>
 						<ArrowRight size={22} strokeWidth={1.8} aria-hidden="true" />
