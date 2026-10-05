@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CartTray } from "../components/customer/cart/CartTray";
 import { CustomerBackground } from "../components/customer/CustomerBackground";
 import { CustomerError } from "../components/customer/CustomerError";
+import { CustomerFooter } from "../components/customer/CustomerFooter";
 import { CustomerHeader } from "../components/customer/CustomerHeader";
 import { MenuGrid } from "../components/customer/menu/MenuGrid";
 import { OrderAccessNotice } from "../components/customer/order/OrderAccessNotice";
@@ -30,7 +31,7 @@ function App() {
 		submitOrder,
 	} = useCustomerOrder();
 	return (
-		<div className="relative min-h-screen bg-[#0a0a12] text-white overflow-x-hidden font-['Hiragino_Sans','Yu_Gothic',sans-serif] selection:bg-pink-500/30">
+		<div className="relative min-h-screen flex flex-col bg-[#0a0a12] text-white overflow-x-hidden font-['Hiragino_Sans','Yu_Gothic',sans-serif] selection:bg-pink-500/30">
 			<CustomerBackground />
 
 			<ToastNotification toast={toast} />
@@ -43,7 +44,7 @@ function App() {
 			<CustomerHeader />
 
 			{/* ===== MAIN CONTENT ===== */}
-			<main className="relative z-10 px-6 md:px-12 pb-32 lg:pb-16 max-w-[1400px] mx-auto">
+			<main className="relative z-10 flex-1 w-full px-6 md:px-12 max-w-[1400px] mx-auto">
 				<CustomerError error={error} onRetry={fetchData} />
 
 				{/* ===== 1. CUSTOMER MODE ===== */}
@@ -75,6 +76,8 @@ function App() {
 					/>
 				</div>
 			</main>
+
+			<CustomerFooter />
 		</div>
 	);
 }
