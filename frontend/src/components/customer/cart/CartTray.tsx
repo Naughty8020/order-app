@@ -13,6 +13,7 @@ interface Props {
 }
 
 import {
+	ArrowRight,
 	Minus,
 	Plus,
 	RotateCw,
@@ -37,19 +38,32 @@ export function CartTray({
 	return (
 		<>
 			{/* Cart Tray Section */}
-			<div className="lg:relative lg:p-0 lg:z-auto">
-				{/* Mobile FAB */}
+			<div className="contents lg:block lg:relative lg:p-0 lg:z-auto">
+				{/* Mobile cart bar */}
 				<button
 					type="button"
 					onClick={() => setIsCartOpen(true)}
-					className={`lg:hidden fixed bottom-6 right-6 z-40 w-16 h-16 bg-gradient-to-br from-[#ec4899] to-[#db2777] rounded-full flex items-center justify-center text-white shadow-[0_4px_20px_rgba(236,72,153,0.4)] transition-transform hover:scale-105 active:scale-95 cursor-pointer`}
+					aria-label={`カートを見る（${cartCount}点、合計¥${cartTotal.toLocaleString()}）`}
+					aria-expanded={isCartOpen}
+					className="lg:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-4 right-4 z-40 flex min-h-[64px] items-center gap-3 rounded-full border-2 border-[#ff76d7] bg-[linear-gradient(105deg,#7616aa_0%,#a918a5_35%,#ff288b_65%,#ff9369_100%)] py-1.5 pl-2 pr-4 text-white shadow-[0_0_24px_rgba(236,72,153,0.4),inset_0_1px_2px_rgba(255,255,255,0.35)] transition-transform hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#ff76d7] cursor-pointer sm:left-6 sm:right-6 sm:gap-4 sm:pr-6"
 				>
-					<ShoppingCart size={26} />
-					{cartCount > 0 && (
-						<span className="absolute -top-1 -right-1 bg-white text-[#db2777] text-[13px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-md animate-bounce">
-							{cartCount}
+					<span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#420c70]/60">
+						<ShoppingCart size={27} strokeWidth={1.8} aria-hidden="true" />
+						{cartCount > 0 && (
+							<span className="absolute -right-1 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ff1686] px-1 text-[11px] font-bold shadow-[0_0_10px_rgba(255,22,134,0.6)]">
+								{cartCount}
+							</span>
+						)}
+					</span>
+					<span className="flex-1 whitespace-nowrap text-left text-[15px] font-extrabold tracking-wide sm:text-lg">
+						カートを見る
+					</span>
+					<span className="flex min-h-8 shrink-0 items-center gap-2 border-l border-white/30 pl-3 sm:gap-4 sm:pl-6">
+						<span className="whitespace-nowrap text-lg font-extrabold tabular-nums sm:text-xl">
+							¥{cartTotal.toLocaleString()}
 						</span>
-					)}
+						<ArrowRight size={22} strokeWidth={1.8} aria-hidden="true" />
+					</span>
 				</button>
 
 				{/* Mobile Overlay */}
