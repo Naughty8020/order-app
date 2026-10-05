@@ -463,6 +463,12 @@ a {
 }
 
 /* Customer lounge */
+.club-footer {
+  padding-bottom: calc(88px + max(12px, env(safe-area-inset-bottom, 0px)));
+}
+@media (min-width: 1024px) {
+  .club-footer { padding-bottom: 16px; }
+}
 .club-background { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 90% 20%,#6b146f33,transparent 50%),#090b1c; }
 .club-hero { position: relative; z-index: 1; width: 100%; min-height: 280px; background: linear-gradient(0deg,#090b1c,transparent 35%),linear-gradient(90deg,#100923aa,transparent 80%),url('/images/drinks/lounge.png') center 55% / cover; }
 .club-hero-content { max-width: 1400px; margin: auto; padding: 30px 32px 42px; }
