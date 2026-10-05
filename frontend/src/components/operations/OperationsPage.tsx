@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getAuthToken, requireLogin } from "../../api/auth";
 import { useCustomerOrder } from "../../hooks/customer/useCustomerOrder";
 import { useMenuManagement } from "../../hooks/staff/useMenuManagement";
 import { useOrderManagement } from "../../hooks/staff/useOrderManagement";
@@ -19,6 +20,33 @@ export function OperationsPage({
 	initialMode: OperationsMode;
 }) {
 	const [mode, setMode] = useState(initialMode);
+	const [authorized, setAuthorized] = useState(() => !!getAuthToken());
+	useEffect(() => {
+		if (mode !== "staff") return;
+		const check = () => {
+			const valid = !!getAuthToken();
+			setAuthorized(valid);
+			if (!valid) requireLogin();
+		};
+		check();
+		const timer = window.setInterval(check, 1000);
+		window.addEventListener("storage", check);
+		return () => {
+			window.clearInterval(timer);
+			window.removeEventListener("storage", check);
+		};
+	}, [mode]);
+	const changeMode = (next: OperationsMode) => {
+		if (next === "staff") {
+			const valid = !!getAuthToken();
+			setAuthorized(valid);
+			if (!valid) {
+				requireLogin();
+				return;
+			}
+		}
+		setMode(next);
+	};
 	const customer = useCustomerOrder(mode === "monitor");
 	const qr = useOrderQR(customer.showToast);
 	const menuManagement = useMenuManagement(
@@ -29,6 +57,7 @@ export function OperationsPage({
 		customer.refreshOrders,
 		customer.showToast,
 	);
+	if (mode === "staff" && !authorized) return null;
 	return (
 		<div className="relative min-h-screen bg-[#0a0a12] text-white overflow-x-hidden font-['Hiragino_Sans','Yu_Gothic',sans-serif] selection:bg-pink-500/30">
 			<CustomerBackground />
@@ -39,7 +68,7 @@ export function OperationsPage({
 				}
 				onClose={() => customer.setSuccessModal({ show: false, orderId: null })}
 			/>
-			<OperationsHeader mode={mode} setMode={setMode} />
+			<OperationsHeader mode={mode} setMode={changeMode} />
 			<main className="relative z-10 px-6 md:px-12 pb-32 lg:pb-16 max-w-[1400px] mx-auto">
 				<CustomerError error={customer.error} onRetry={customer.fetchData} />
 				{mode === "customer" && <CustomerContent {...customer} />}

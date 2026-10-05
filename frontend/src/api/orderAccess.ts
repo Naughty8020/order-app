@@ -1,3 +1,4 @@
+import { authenticatedFetch } from "./auth";
 import { getApiBase } from "./base";
 
 export interface OrderQRToken {
@@ -6,7 +7,7 @@ export interface OrderQRToken {
 }
 
 export async function getQRToken(): Promise<OrderQRToken> {
-	const response = await fetch(`${getApiBase()}/order-access/qr`);
+	const response = await authenticatedFetch(`${getApiBase()}/order-access/qr`);
 	if (!response.ok) throw new Error("QRコードの発行に失敗しました");
 	return response.json();
 }

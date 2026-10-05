@@ -8,11 +8,16 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { Order } from "../../api/order";
+import { requireLogin } from "../../api/auth";
 import type { Menu } from "../../cart";
 import { OperationsPage } from "./OperationsPage";
 
 vi.mock("qrcode", () => ({
 	default: { toDataURL: vi.fn(async () => "data:image/png;base64,qr") },
+}));
+vi.mock("../../api/auth", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../../api/auth")>()),
+	requireLogin: vi.fn(),
 }));
 let menus: Menu[];
 let orders: Order[];
@@ -21,6 +26,10 @@ const fetchMock = vi.fn<typeof fetch>();
 beforeEach(() => {
 	window.history.replaceState({}, "", "/");
 	window.sessionStorage.clear();
+	window.localStorage.setItem(
+		"token",
+		`e30.${btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 }))}.signature`,
+	);
 	menus = [{ id: 1, name: "コーラ", price: 200, is_available: true }];
 	orders = [
 		{
@@ -63,9 +72,19 @@ beforeEach(() => {
 
 afterEach(() => {
 	cleanup();
+	window.localStorage.clear();
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 	fetchMock.mockReset();
+	vi.mocked(requireLogin).mockClear();
+});
+
+it("requires login when switching from monitor to staff without a JWT", async () => {
+	window.localStorage.clear();
+	render(<OperationsPage initialMode="monitor" />);
+	fireEvent.click(await screen.findByRole("button", { name: /スタッフ画面/ }));
+	expect(requireLogin).toHaveBeenCalled();
+	expect(screen.queryByRole("button", { name: /準備完了/ })).toBeNull();
 });
 
 it("processes pending orders through ready and completed, keeping history", async () => {
