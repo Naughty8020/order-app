@@ -1,9 +1,10 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { getAuthToken } from "../api/auth";
 import { OperationsPage } from "../components/operations/OperationsPage";
 export const Route = createFileRoute("/staff")({
 	ssr: false,
 	beforeLoad: () => {
-		if (typeof window !== "undefined" && !window.localStorage.getItem("token")) {
+		if (typeof window !== "undefined" && !getAuthToken()) {
 			throw redirect({ to: "/login" });
 		}
 	},

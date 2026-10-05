@@ -1,4 +1,5 @@
 import type { Menu } from "../cart";
+import { authenticatedFetch } from "./auth";
 import { getApiBase } from "./base";
 
 export type StaffOrderStatus = "ready" | "completed";
@@ -7,11 +8,15 @@ export async function updateOrderStatus(
 	id: number,
 	status: StaffOrderStatus,
 ): Promise<void> {
-	const response = await fetch(`${getApiBase()}/orders/${id}/status`, {
-		method: "PUT",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ status }),
-	});
+	const response = await authenticatedFetch(
+		`${getApiBase()}/orders/${id}/status`,
+		{
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ status }),
+		},
+		true,
+	);
 	if (!response.ok) throw new Error("ステータス更新に失敗しました");
 }
 
@@ -40,7 +45,7 @@ export type CreateOrderResult =
 	| { ok: false; status: number; error: string };
 
 export async function getOrders(): Promise<Order[]> {
-	const response = await fetch(`${getApiBase()}/orders`);
+	const response = await authenticatedFetch(`${getApiBase()}/orders`);
 	if (!response.ok) throw new Error("注文履歴の取得に失敗しました");
 	const data: { orders?: Order[] } = await response.json();
 	return data.orders || [];
