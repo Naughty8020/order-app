@@ -19,16 +19,16 @@ export function MenuGrid({
 	return (
 		<>
 			{loading && menus.length === 0 ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-5">
 					{[1, 2, 3, 4].map((n) => (
 						<div
 							key={n}
-							className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] h-[220px] rounded-2xl animate-pulse"
+							className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] h-24 md:h-[220px] rounded-2xl animate-pulse"
 						/>
 					))}
 				</div>
 			) : (
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-5">
 					{menus.map((menu, index) => (
 						<MenuCard
 							key={menu.id}

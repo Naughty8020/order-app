@@ -25,7 +25,7 @@ export function MenuCard({
 	return (
 		<div
 			key={menu.id}
-			className={`relative bg-gradient-to-br from-[rgba(255,255,255,0.045)] to-[rgba(255,255,255,0.015)] border rounded-[16px] p-6 flex flex-col justify-between transition-colors duration-200 group
+			className={`relative bg-gradient-to-br from-[rgba(255,255,255,0.045)] to-[rgba(255,255,255,0.015)] border rounded-[16px] p-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 md:p-6 md:flex md:flex-col md:items-stretch md:gap-0 md:justify-between transition-colors duration-200 group
 														${
 															menu.is_available
 																? isFeatured
@@ -34,25 +34,30 @@ export function MenuCard({
 																: "border-white/5 opacity-50"
 														}`}
 		>
-			{/* Emoji Icon */}
-			<div
-				className={`w-10 h-10 rounded-[10px] flex items-center justify-center text-[18px] mb-4 ${iconBg}`}
-			>
-				{emoji}
+			<div className="min-w-0">
+				<div className="flex items-center gap-2 md:block">
+					<div
+						className={`w-8 h-8 shrink-0 rounded-[10px] flex items-center justify-center text-[18px] md:w-10 md:h-10 md:mb-4 ${iconBg}`}
+					>
+						{emoji}
+					</div>
+
+					{/* Name */}
+					<h3 className="min-w-0 text-sm leading-5 font-semibold text-white md:text-[17px] md:mb-1">
+						{menu.name.split(" (")[0]}
+					</h3>
+				</div>
+				{englishName && (
+					<p className="hidden md:block text-xs text-[#71717a] mb-[14px]">
+						{englishName}
+					</p>
+				)}
+
+				{/* Price */}
+				<p className="mt-1 text-base font-bold text-[#f472b6] md:mt-0 md:text-[20px] md:mb-[18px]">
+					¥{menu.price.toLocaleString()}
+				</p>
 			</div>
-
-			{/* Name */}
-			<h3 className="text-[17px] font-semibold text-white mb-1">
-				{menu.name.split(" (")[0]}
-			</h3>
-			{englishName && (
-				<p className="text-xs text-[#71717a] mb-[14px]">{englishName}</p>
-			)}
-
-			{/* Price */}
-			<p className="text-[20px] font-bold text-[#f472b6] mb-[18px]">
-				¥{menu.price.toLocaleString()}
-			</p>
 
 			{/* Add / Quantity */}
 			{!menu.is_available ? (
@@ -60,21 +65,23 @@ export function MenuCard({
 					SOLD OUT
 				</span>
 			) : inCart ? (
-				<div className="flex items-center bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.12)] rounded-[10px] p-1.5 w-full justify-between">
+				<div className="flex items-center bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.12)] rounded-[10px] md:p-1.5 md:w-full justify-between">
 					<button
 						type="button"
 						onClick={() => updateCartQty(menu.id, -1)}
-						className="p-2 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition cursor-pointer"
+						aria-label={`${menu.name}を1点減らす`}
+						className="flex h-11 w-11 items-center justify-center hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition cursor-pointer"
 					>
 						<Minus size={14} />
 					</button>
-					<span className="px-3 text-[13px] font-bold text-white min-w-[20px] text-center">
+					<span className="px-1 text-[13px] font-bold text-white min-w-[20px] text-center">
 						{inCart.quantity}
 					</span>
 					<button
 						type="button"
 						onClick={() => updateCartQty(menu.id, 1)}
-						className="p-2 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition cursor-pointer"
+						aria-label={`${menu.name}を1点増やす`}
+						className="flex h-11 w-11 items-center justify-center hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition cursor-pointer"
 					>
 						<Plus size={14} />
 					</button>
@@ -83,9 +90,11 @@ export function MenuCard({
 				<button
 					type="button"
 					onClick={() => addToCart(menu)}
-					className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.12)] text-[#e4e4e7] text-[13px] font-semibold py-3 rounded-[10px] transition hover:bg-gradient-to-br hover:from-[#ec4899] hover:to-[#db2777] hover:text-white hover:border-transparent hover:shadow-[0_4px_16px_rgba(236,72,153,0.35)] flex items-center justify-center gap-2 cursor-pointer"
+					aria-label="＋ カートに追加"
+					className="min-h-11 px-3 md:w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.12)] text-[#e4e4e7] text-[13px] font-semibold py-3 rounded-[10px] transition hover:bg-gradient-to-br hover:from-[#ec4899] hover:to-[#db2777] hover:text-white hover:border-transparent hover:shadow-[0_4px_16px_rgba(236,72,153,0.35)] flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
 				>
-					＋ カートに追加
+					<span aria-hidden="true">＋</span>
+					<span className="sr-only md:not-sr-only">カートに</span>追加
 				</button>
 			)}
 		</div>
