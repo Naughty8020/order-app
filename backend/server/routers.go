@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"order-system/config"
 	"order-system/handler/menu"
 	"order-system/handler/order"
 	orderAccessHandler "order-system/handler/orderaccess"
@@ -33,10 +34,13 @@ func Run(db *gorm.DB) error {
 	}
 
 	secret := os.Getenv("JWT_SECRET")
+	if err := config.ValidateJWTSecret(secret); err != nil {
+		return err
+	}
 	adminUsername := os.Getenv("ADMIN_USERNAME")
 
-	if secret == "" || adminUsername == "" {
-		return errors.New("JWT_SECRET and ADMIN_USERNAME must be set")
+	if adminUsername == "" {
+		return errors.New("ADMIN_USERNAME must be set")
 	}
 
 	auth := middleware.NewAuthMiddleware(db, secret, adminUsername)

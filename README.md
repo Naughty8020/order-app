@@ -31,6 +31,8 @@
 バックエンドは、Docker Composeを使用してDB（MySQL）とAPIサーバーをセットで起動するのが最も簡単です。
 
 #### 1. Docker Composeを使用する場合
+先に[バックエンドの設定手順](backend/README.md#管理者の初期登録)に従い、
+ランダムな `JWT_SECRET` と管理者情報を設定してください。
 `backend` ディレクトリへ移動し、Docker Compose コマンドを実行します。
 ```bash
 cd backend
