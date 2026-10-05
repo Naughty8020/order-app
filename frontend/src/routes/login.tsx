@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { createSession } from '../api/login'
 
@@ -7,6 +7,8 @@ export const Route = createFileRoute('/login')({
 })
 
 function RouteComponent() {
+  const navigate = useNavigate()
+
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -25,6 +27,10 @@ function RouteComponent() {
       localStorage.setItem('token', data.token)
 
       console.log('ログイン成功', data)
+
+      await navigate({
+        to: '/staff',
+      })
     } catch (error) {
       console.error(error)
       setError('ユーザーネームまたはパスワードが違います')
