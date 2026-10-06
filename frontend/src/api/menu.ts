@@ -48,3 +48,20 @@ export async function deleteMenu(id: number): Promise<void> {
 	);
 	if (!response.ok) throw new Error("削除に失敗しました");
 }
+
+export async function updateMenuPromotion(
+	id: number,
+	field: "is_recommended" | "is_featured",
+	enabled: boolean,
+): Promise<void> {
+	const response = await authenticatedFetch(
+		`${getApiBase()}/menus/${id}`,
+		{
+			method: "PUT",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ [field]: enabled }),
+		},
+		true,
+	);
+	if (!response.ok) throw new Error("おすすめ表示の更新に失敗しました");
+}

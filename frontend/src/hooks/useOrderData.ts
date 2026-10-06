@@ -40,10 +40,14 @@ export function useOrderData(onReady?: (ids: number[]) => void) {
 
 	useEffect(() => {
 		fetchData();
-		// Poll orders every 4 seconds for immediate monitor updates
+		// Refresh menu promotions and orders on already-open screens.
 		const interval = setInterval(async () => {
 			try {
-				const newOrders = await getOrders();
+				const [newMenus, newOrders] = await Promise.all([
+					getMenus(),
+					getOrders(),
+				]);
+				setMenus(newMenus);
 				setOrders(newOrders);
 
 				const currentReadyIds = newOrders

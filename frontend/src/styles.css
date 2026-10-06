@@ -544,3 +544,8 @@ a {
 .club-tray .club-confirm { min-height: 52px; font-size: 14px; font-weight: 800; gap: 8px; border-radius: 14px; }
 .club-confirm:disabled:hover { filter: none; }
 .club-confirm:disabled { box-shadow: none; }
+
+/* Allow both menu promotion badges without overlapping. */
+.club-card-badges { position:absolute; top:9px; left:8px; right:8px; display:flex; flex-wrap:wrap; gap:6px; }
+.club-card-badges .club-card-badge { position:static; }
+@media(min-width:640px) { .club-card-badges { top:14px; left:12px; right:12px; } }

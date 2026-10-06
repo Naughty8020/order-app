@@ -54,3 +54,43 @@ it("polls every four seconds, announces only newly ready orders, and stops on un
 	await vi.advanceTimersByTimeAsync(4000);
 	expect(fetchMock).toHaveBeenCalledTimes(requests);
 });
+
+it("refreshes saved menu promotions without reloading the page", async () => {
+	vi.useFakeTimers();
+	let recommended = false;
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (input: RequestInfo | URL) =>
+			Response.json(
+				String(input).endsWith("/menus")
+					? {
+							data: [
+								{
+									id: 1,
+									name: "コーラ",
+									price: 200,
+									is_available: true,
+									is_recommended: recommended,
+								},
+							],
+						}
+					: { orders: [] },
+			),
+		),
+	);
+	const { result } = renderHook(() => useOrderData());
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(0);
+	});
+	expect(result.current.menus[0].is_recommended).toBe(false);
+	recommended = true;
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(4000);
+	});
+	expect(result.current.menus[0].is_recommended).toBe(true);
+	recommended = false;
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(4000);
+	});
+	expect(result.current.menus[0].is_recommended).toBe(false);
+});

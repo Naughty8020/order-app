@@ -207,3 +207,21 @@ func decodeResponse(t *testing.T, recorder *httptest.ResponseRecorder, value any
 		t.Fatalf("failed to decode response: %v; body = %s", err, recorder.Body.String())
 	}
 }
+
+func TestUpdateMenuPromotionFields(t *testing.T) {
+	uc := &menuUsecaseMock{updateMenuFn: func(id uint, input menuUsecase.UpdateMenuInput) (*models.Menu, error) {
+		if input.IsRecommended == nil || *input.IsRecommended || input.IsFeatured == nil || !*input.IsFeatured || input.IsAvailable != nil {
+			t.Fatalf("unexpected input: %+v", input)
+		}
+		return &models.Menu{ID: id, IsRecommended: *input.IsRecommended, IsFeatured: *input.IsFeatured}, nil
+	}}
+	response := performRequest(NewMenuHandler(uc), http.MethodPut, "/api/menus/1", `{"is_recommended":false,"is_featured":true}`)
+	if response.Code != http.StatusOK {
+		t.Fatalf("status: %d, body: %s", response.Code, response.Body.String())
+	}
+	var body UpdateMenuResponse
+	decodeResponse(t, response, &body)
+	if body.Data.IsRecommended || !body.Data.IsFeatured {
+		t.Fatalf("unexpected response: %+v", body)
+	}
+}

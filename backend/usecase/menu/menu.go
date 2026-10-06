@@ -17,15 +17,19 @@ type MenuUsecase interface {
 }
 
 type CreateMenuInput struct {
-	Name        string
-	Price       int
-	IsAvailable bool
+	Name          string
+	Price         int
+	IsRecommended bool
+	IsFeatured    bool
+	IsAvailable   bool
 }
 
 type UpdateMenuInput struct {
-	Name        *string
-	Price       *int
-	IsAvailable *bool
+	Name          *string
+	Price         *int
+	IsRecommended *bool
+	IsFeatured    *bool
+	IsAvailable   *bool
 }
 
 type menuUsecaseImpl struct {
@@ -40,9 +44,11 @@ func NewMenuUsecase(repo repository.MenuRepository) *menuUsecaseImpl {
 
 func (u *menuUsecaseImpl) CreateMenu(input CreateMenuInput) (*models.Menu, error) {
 	menu := &models.Menu{
-		Name:        input.Name,
-		Price:       input.Price,
-		IsAvailable: input.IsAvailable,
+		Name:          input.Name,
+		Price:         input.Price,
+		IsAvailable:   input.IsAvailable,
+		IsRecommended: input.IsRecommended,
+		IsFeatured:    input.IsFeatured,
 	}
 
 	if err := u.repo.Create(menu); err != nil {
@@ -65,6 +71,12 @@ func (u *menuUsecaseImpl) UpdateMenu(id uint, input UpdateMenuInput) (*models.Me
 		return nil, err
 	}
 
+	if input.IsRecommended != nil {
+		menu.IsRecommended = *input.IsRecommended
+	}
+	if input.IsFeatured != nil {
+		menu.IsFeatured = *input.IsFeatured
+	}
 	if input.Name != nil {
 		menu.Name = *input.Name
 	}
