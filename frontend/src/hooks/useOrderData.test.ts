@@ -94,3 +94,162 @@ it("refreshes saved menu promotions without reloading the page", async () => {
 	});
 	expect(result.current.menus[0].is_recommended).toBe(false);
 });
+
+function deferred<T>() {
+	let resolve!: (value: T) => void;
+	const promise = new Promise<T>((res) => {
+		resolve = res;
+	});
+	return { promise, resolve };
+}
+const menuResponse = (enabled: boolean) =>
+	Response.json({
+		data: [
+			{
+				id: 1,
+				name: "コーラ",
+				price: 200,
+				is_available: true,
+				is_recommended: enabled,
+				is_featured: enabled,
+			},
+		],
+	});
+
+for (const older of ["poll", "fetchData", "refreshMenus"] as const) {
+	for (const newer of ["poll", "fetchData", "refreshMenus"] as const) {
+		it(`ignores stale ${older} menus after newer ${newer}`, async () => {
+			vi.useFakeTimers();
+			const pending: ReturnType<typeof deferred<Response>>[] = [];
+			vi.stubGlobal(
+				"fetch",
+				vi.fn((input: RequestInfo | URL) => {
+					if (!String(input).endsWith("/menus"))
+						return Promise.resolve(Response.json({ orders: [] }));
+					const request = deferred<Response>();
+					pending.push(request);
+					return request.promise;
+				}),
+			);
+			const { result } = renderHook(() => useOrderData());
+			await act(async () => {
+				pending[0].resolve(menuResponse(false));
+			});
+			const start = async (source: typeof older) => {
+				await act(async () => {
+					if (source === "poll") await vi.advanceTimersByTimeAsync(4000);
+					else void result.current[source]();
+				});
+			};
+			await start(older);
+			await start(newer);
+			await act(async () => {
+				pending[2].resolve(menuResponse(true));
+			});
+			await act(async () => {
+				pending[1].resolve(menuResponse(false));
+			});
+			expect(result.current.menus[0]).toMatchObject({
+				is_recommended: true,
+				is_featured: true,
+			});
+		});
+	}
+}
+
+for (const failure of ["reject", "pending"] as const) {
+	it(`updates orders and notifies while menu polling is ${failure}`, async () => {
+		vi.useFakeTimers();
+		let polling = false;
+		const speak = vi.fn();
+		vi.stubGlobal("speechSynthesis", { speak });
+		vi.stubGlobal(
+			"SpeechSynthesisUtterance",
+			class {
+				constructor(public text: string) {}
+			},
+		);
+		vi.stubGlobal(
+			"fetch",
+			vi.fn((input: RequestInfo | URL) => {
+				if (String(input).endsWith("/menus")) {
+					if (!polling) return Promise.resolve(menuResponse(true));
+					return failure === "reject"
+						? Promise.reject(new Error("menu unavailable"))
+						: new Promise<Response>(() => {});
+				}
+				return Promise.resolve(
+					Response.json({
+						orders: [
+							{ id: 7, status: polling ? "ready" : "pending", order_items: [] },
+						],
+					}),
+				);
+			}),
+		);
+		const { result } = renderHook(() => useOrderData());
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(0);
+		});
+		polling = true;
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(4000);
+		});
+		expect(result.current.orders[0].status).toBe("ready");
+		expect(result.current.menus[0].is_recommended).toBe(true);
+		expect(speak).toHaveBeenCalledTimes(1);
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(4000);
+		});
+		expect(speak).toHaveBeenCalledTimes(1);
+	});
+}
+
+it("applies initial orders without waiting for menus", async () => {
+	const menus = deferred<Response>();
+	const onReady = vi.fn();
+	vi.stubGlobal(
+		"fetch",
+		vi.fn((input: RequestInfo | URL) =>
+			String(input).endsWith("/menus")
+				? menus.promise
+				: Promise.resolve(
+						Response.json({
+							orders: [{ id: 7, status: "ready", order_items: [] }],
+						}),
+					),
+		),
+	);
+	const { result } = renderHook(() => useOrderData(onReady));
+	await act(async () => {});
+	expect(result.current.orders[0].status).toBe("ready");
+	expect(onReady).toHaveBeenCalledWith([7]);
+	await act(async () => {
+		menus.resolve(menuResponse(true));
+	});
+	expect(result.current.loading).toBe(false);
+});
+
+it("refreshes menus even when order polling fails", async () => {
+	vi.useFakeTimers();
+	let polling = false;
+	vi.stubGlobal(
+		"fetch",
+		vi.fn((input: RequestInfo | URL) => {
+			if (String(input).endsWith("/menus"))
+				return Promise.resolve(menuResponse(polling));
+			return polling
+				? Promise.reject(new Error("orders unavailable"))
+				: Promise.resolve(Response.json({ orders: [] }));
+		}),
+	);
+	const { result } = renderHook(() => useOrderData());
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(0);
+	});
+	polling = true;
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(4000);
+	});
+	expect(result.current.menus[0].is_recommended).toBe(true);
+});
