@@ -1,10 +1,7 @@
 import { GlassWater, Martini, Star, Wine } from "lucide-react";
 import { useState } from "react";
 import type { Cart, Menu } from "../../../cart";
-import {
-	isCocktailDrink,
-	isRecommendedDrink,
-} from "../../../utils/drinkVisuals";
+import { isCocktailDrink } from "../../../utils/drinkVisuals";
 import { MenuCard } from "./MenuCard";
 
 interface Props {
@@ -33,7 +30,7 @@ export function MenuGrid({
 			category === "all" ||
 			(category === "soft" && !isCocktailDrink(menu.name)) ||
 			(category === "cocktail" && isCocktailDrink(menu.name)) ||
-			(category === "recommended" && isRecommendedDrink(menu.name)),
+			(category === "recommended" && menu.is_recommended),
 	);
 	return (
 		<>
@@ -65,7 +62,6 @@ export function MenuGrid({
 							key={menu.id}
 							menu={menu}
 							inCart={cart[menu.id]}
-							isFeatured={menu.id === menus[0]?.id}
 							addToCart={addToCart}
 							updateCartQty={updateCartQty}
 						/>

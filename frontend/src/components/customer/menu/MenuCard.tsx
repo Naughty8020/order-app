@@ -1,24 +1,20 @@
 import { Crown, Flame, GlassWater, Minus, Plus } from "lucide-react";
 import type { CartItem, Menu } from "../../../cart";
-import {
-	getDrinkVisual,
-	isRecommendedDrink,
-} from "../../../utils/drinkVisuals";
+import { getDrinkVisual } from "../../../utils/drinkVisuals";
 export function MenuCard({
 	menu,
 	inCart,
-	isFeatured,
 	addToCart,
 	updateCartQty,
 }: {
 	menu: Menu;
 	inCart: CartItem | undefined;
-	isFeatured: boolean;
 	addToCart: (menu: Menu) => void;
 	updateCartQty: (id: number, delta: number) => void;
 }) {
 	const visual = getDrinkVisual(menu.name);
-	const recommended = isRecommendedDrink(menu.name);
+	const isFeatured = !!menu.is_featured;
+	const recommended = !!menu.is_recommended;
 	return (
 		<article
 			className={`club-card ${isFeatured ? "club-card-featured" : ""} ${!menu.is_available ? "club-card-unavailable" : ""}`}
@@ -35,16 +31,18 @@ export function MenuCard({
 					<GlassWater size={64} />
 				</div>
 			)}
-			{isFeatured && (
-				<span className="club-card-badge">
-					<Flame size={16} /> イチオシ
-				</span>
-			)}
-			{!isFeatured && recommended && (
-				<span className="club-card-badge club-card-recommended">
-					<Crown size={16} /> おすすめ
-				</span>
-			)}
+			<div className="club-card-badges">
+				{isFeatured && (
+					<span className="club-card-badge">
+						<Flame size={16} /> イチオシ
+					</span>
+				)}
+				{recommended && (
+					<span className="club-card-badge club-card-recommended">
+						<Crown size={16} /> おすすめ
+					</span>
+				)}
+			</div>
 			<div className="club-card-content">
 				<h3>{menu.name.split(" (")[0]}</h3>
 				<p className="club-drink-description">{visual.description}</p>
