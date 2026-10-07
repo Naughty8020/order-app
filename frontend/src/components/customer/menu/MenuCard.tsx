@@ -73,7 +73,7 @@ export function MenuCard({
 							className="club-add"
 							type="button"
 							onClick={() => addToCart(menu)}
-							aria-label="＋ カートに追加"
+							aria-label={`${menu.name}をカートに追加`}
 						>
 							<Plus size={18} aria-hidden="true" />
 							追加
