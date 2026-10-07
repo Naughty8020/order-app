@@ -11,6 +11,7 @@ export function OrderCard({ order }: { order: Order }) {
 				<span className="sr-only">オーダー番号 </span>#{order.id}
 			</span>
 			<span
+				aria-live="polite"
 				className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-2 text-xs font-bold ${ready ? "border-pink-500/40 bg-pink-500/15 text-pink-300" : "border-amber-600/30 bg-amber-950/50 text-amber-400"}`}
 			>
 				{ready ? (

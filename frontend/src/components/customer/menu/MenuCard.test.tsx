@@ -47,7 +47,7 @@ it("uses saved promotions rather than menu position, supports both badges, and r
 		expect(article.className).not.toContain("club-card-featured");
 	rerender(<MenuGrid {...props} menus={[{ ...menu, is_available: false }]} />);
 	expect(screen.getByText("SOLD OUT")).toBeTruthy();
-	expect(screen.queryByRole("button", { name: "＋ カートに追加" })).toBeNull();
+	expect(screen.queryByRole("button", { name: "コーラをカートに追加" })).toBeNull();
 });
 
 it("filters recommendations using saved settings, including after a refresh", () => {

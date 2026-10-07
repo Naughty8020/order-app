@@ -62,7 +62,7 @@ it("connects menu selection, the cart and the order confirmation after splitting
 	vi.stubGlobal("fetch", fetchMock);
 	render(<CustomerOrder />);
 	fireEvent.click(
-		await screen.findByRole("button", { name: "＋ カートに追加" }),
+		await screen.findByRole("button", { name: "コーラをカートに追加" }),
 	);
 	expect(screen.getByText("SOLD OUT")).toBeTruthy();
 	expect(screen.getByText("合計")).toBeTruthy();
