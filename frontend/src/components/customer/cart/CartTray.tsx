@@ -13,6 +13,7 @@ interface Props {
 }
 
 import {
+	ArrowRight,
 	Minus,
 	Plus,
 	RotateCw,
@@ -37,19 +38,32 @@ export function CartTray({
 	return (
 		<>
 			{/* Cart Tray Section */}
-			<div className="lg:relative lg:p-0 lg:z-auto">
-				{/* Mobile FAB */}
+			<div className="contents lg:block lg:relative lg:p-0 lg:z-auto">
+				{/* Mobile cart bar */}
 				<button
 					type="button"
 					onClick={() => setIsCartOpen(true)}
-					className={`lg:hidden fixed bottom-6 right-6 z-40 w-16 h-16 bg-gradient-to-br from-[#ec4899] to-[#db2777] rounded-full flex items-center justify-center text-white shadow-[0_4px_20px_rgba(236,72,153,0.4)] transition-transform hover:scale-105 active:scale-95 cursor-pointer`}
+					aria-label={`カートを見る（${cartCount}点、合計¥${cartTotal.toLocaleString()}）`}
+					aria-expanded={isCartOpen}
+					className="lg:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-4 right-4 z-40 flex min-h-[64px] items-center gap-2 rounded-full border-2 border-[#ff76d7] bg-[linear-gradient(105deg,#7616aa_0%,#a918a5_35%,#ff288b_65%,#ff9369_100%)] py-1.5 pl-2 pr-3 text-white shadow-[0_0_24px_rgba(236,72,153,0.4),inset_0_1px_2px_rgba(255,255,255,0.35)] transition-transform hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#ff76d7] cursor-pointer sm:left-6 sm:right-6 sm:gap-4 sm:pr-6"
 				>
-					<ShoppingCart size={26} />
-					{cartCount > 0 && (
-						<span className="absolute -top-1 -right-1 bg-white text-[#db2777] text-[13px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-md animate-bounce">
-							{cartCount}
+					<span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#420c70]/60">
+						<ShoppingCart size={27} strokeWidth={1.8} aria-hidden="true" />
+						{cartCount > 0 && (
+							<span className="absolute -right-1 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ff1686] px-1 text-[11px] font-bold shadow-[0_0_10px_rgba(255,22,134,0.6)]">
+								{cartCount}
+							</span>
+						)}
+					</span>
+					<span className="flex-1 whitespace-nowrap text-left text-[13px] font-extrabold sm:text-lg">
+						カートを見る
+					</span>
+					<span className="flex min-h-8 shrink-0 items-center gap-1 border-l border-white/30 pl-2 sm:gap-4 sm:pl-6">
+						<span className="whitespace-nowrap text-base font-extrabold tabular-nums sm:text-xl">
+							¥{cartTotal.toLocaleString()}
 						</span>
-					)}
+						<ArrowRight size={22} strokeWidth={1.8} aria-hidden="true" />
+					</span>
 				</button>
 
 				{/* Mobile Overlay */}
@@ -69,19 +83,24 @@ export function CartTray({
 								${isCartOpen ? "translate-y-0" : "translate-y-full"} 
 								${cartCount === 0 && !isCartOpen ? "invisible lg:visible" : "visible lg:visible"}`}
 				>
-					<div className="bg-[rgba(20,20,30,0.95)] lg:bg-[rgba(20,20,30,0.6)] border border-[rgba(255,255,255,0.08)] rounded-[24px] lg:rounded-[18px] p-6 pb-8 lg:pb-6 backdrop-blur-xl shadow-[0_-10px_40px_rgba(0,0,0,0.4)] lg:shadow-none lg:sticky lg:top-6 flex flex-col h-fit max-h-[85vh] lg:max-h-none pointer-events-auto">
+					<div className="club-tray rounded-[24px] p-5 pb-7 sm:p-6 backdrop-blur-xl lg:sticky lg:top-6 flex flex-col h-fit max-h-[85vh] lg:max-h-none pointer-events-auto">
 						{/* Mobile Close Handle */}
 						<button
 							type="button"
 							aria-label="カートを閉じる"
-							className="lg:hidden w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-4 cursor-pointer block border-none"
+							className="lg:hidden w-12 h-1.5 bg-[#ed84de]/40 rounded-full mx-auto mb-4 cursor-pointer block border-none"
 							onClick={() => setIsCartOpen(false)}
 						/>
 
 						{/* Tray Header */}
-						<div className="flex items-center justify-between pb-4 border-b border-[rgba(255,255,255,0.08)] mb-5 flex-shrink-0">
+						<div className="flex items-center justify-between pb-4 border-b border-[#ec57db]/20 mb-5 flex-shrink-0">
 							<h2 className="text-[16px] font-bold text-white flex items-center gap-2">
-								🛍 注文トレイ
+								<ShoppingCart
+									size={20}
+									className="text-[#f084dc]"
+									aria-hidden="true"
+								/>{" "}
+								注文トレイ
 							</h2>
 							<div className="flex items-center gap-3">
 								<span className="text-[#f472b6] font-semibold text-[16px]">
@@ -90,7 +109,8 @@ export function CartTray({
 								<button
 									type="button"
 									onClick={() => setIsCartOpen(false)}
-									className="lg:hidden p-1.5 text-zinc-400 hover:text-white bg-white/5 rounded-full cursor-pointer transition-colors"
+									aria-label="カートを閉じる"
+									className="club-tray-icon flex lg:hidden rounded-full"
 								>
 									<X size={18} />
 								</button>
@@ -115,22 +135,23 @@ export function CartTray({
 									{Object.values(cart).map((item) => (
 										<div
 											key={item.menu.id}
-											className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-3 flex justify-between items-center"
+											className="club-tray-item rounded-[16px] p-3 flex flex-wrap gap-3 justify-between items-center"
 										>
-											<div className="max-w-[130px]">
-												<p className="text-[13px] font-semibold text-white truncate mb-0.5">
+											<div className="min-w-0 flex-1 basis-24">
+												<p className="text-[13px] font-semibold text-white break-words mb-1">
 													{item.menu.name}
 												</p>
-												<p className="text-[12px] text-[#a1a1aa]">
+												<p className="text-[13px] font-bold text-[#f560bf]">
 													¥{item.menu.price.toLocaleString()}
 												</p>
 											</div>
 											<div className="flex items-center gap-2">
-												<div className="flex items-center bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-[8px] p-0.5">
+												<div className="club-quantity">
 													<button
 														type="button"
 														onClick={() => updateCartQty(item.menu.id, -1)}
-														className="p-1 hover:bg-white/10 rounded text-zinc-400 hover:text-white cursor-pointer"
+														aria-label={`${item.menu.name}を1点減らす`}
+														className="rounded-xl hover:bg-white/10 transition-colors"
 													>
 														<Minus size={12} />
 													</button>
@@ -140,7 +161,8 @@ export function CartTray({
 													<button
 														type="button"
 														onClick={() => updateCartQty(item.menu.id, 1)}
-														className="p-1 hover:bg-white/10 rounded text-zinc-400 hover:text-white cursor-pointer"
+														aria-label={`${item.menu.name}を1点増やす`}
+														className="rounded-xl hover:bg-white/10 transition-colors"
 													>
 														<Plus size={12} />
 													</button>
@@ -148,7 +170,8 @@ export function CartTray({
 												<button
 													type="button"
 													onClick={() => removeFromCart(item.menu.id)}
-													className="p-2 hover:bg-[rgba(255,255,255,0.05)] text-zinc-500 hover:text-rose-400 rounded-lg transition cursor-pointer"
+													aria-label={`${item.menu.name}をカートから削除`}
+													className="club-tray-icon flex rounded-xl"
 												>
 													<Trash2 size={14} />
 												</button>
@@ -156,9 +179,9 @@ export function CartTray({
 										</div>
 									))}
 								</div>
-								<div className="flex justify-between items-center pt-4 border-t border-[rgba(255,255,255,0.08)] flex-shrink-0 text-[14px] text-[#a1a1aa]">
+								<div className="flex justify-between items-center pt-4 border-t border-[#ec57db]/20 flex-shrink-0 text-[14px] text-[#d5bbda]">
 									<span>合計</span>
-									<span className="text-[20px] font-bold text-white">
+									<span className="text-[24px] font-extrabold text-[#f560bf]">
 										¥{cartTotal.toLocaleString()}
 									</span>
 								</div>
@@ -169,7 +192,7 @@ export function CartTray({
 										void submitOrder();
 									}}
 									disabled={loading || orderAccessStatus !== "valid"}
-									className="w-full mt-5 bg-gradient-to-br from-[#ec4899] to-[#db2777] hover:opacity-90 text-white font-extrabold py-3.5 rounded-[12px] shadow-[0_4px_20px_rgba(236,72,153,0.35)] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-[14px] cursor-pointer"
+									className="club-add club-confirm w-full mt-5 transition disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
 								>
 									{loading ? (
 										<>

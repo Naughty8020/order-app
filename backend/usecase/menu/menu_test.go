@@ -182,3 +182,42 @@ func TestDeleteMenuReturnsNotFound(t *testing.T) {
 		t.Errorf("DeleteMenu() error = %v, want %v", err, ErrMenuNotFound)
 	}
 }
+
+func TestMenuPromotions(t *testing.T) {
+	stored := &models.Menu{ID: 1, Name: "コーラ", Price: 200, IsAvailable: true}
+	repo := &menuRepositoryMock{
+		createFn:   func(menu *models.Menu) error { *stored = *menu; return nil },
+		findByIDFn: func(id uint) (*models.Menu, error) { return stored, nil },
+		saveFn:     func(menu *models.Menu) error { return nil },
+	}
+	uc := NewMenuUsecase(repo)
+	if _, err := uc.CreateMenu(CreateMenuInput{Name: "コーラ", Price: 200, IsAvailable: true, IsRecommended: true, IsFeatured: true}); err != nil {
+		t.Fatal(err)
+	}
+	if !stored.IsRecommended || !stored.IsFeatured {
+		t.Fatalf("promotions not created: %+v", stored)
+	}
+	off := false
+	got, err := uc.UpdateMenu(1, UpdateMenuInput{IsRecommended: &off})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.IsRecommended || !got.IsFeatured || !got.IsAvailable || got.Name != "コーラ" {
+		t.Fatalf("partial update changed other fields: %+v", got)
+	}
+	got, err = uc.UpdateMenu(1, UpdateMenuInput{IsFeatured: &off})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.IsFeatured {
+		t.Fatal("featured was not disabled")
+	}
+	on := true
+	got, err = uc.UpdateMenu(1, UpdateMenuInput{IsRecommended: &on})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got.IsRecommended || got.IsFeatured {
+		t.Fatalf("independent enable failed: %+v", got)
+	}
+}
