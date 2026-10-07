@@ -199,7 +199,7 @@ func TestUpdateOrderStatus(t *testing.T) {
 			if findCount == 1 {
 				return &models.Order{ID: id, Status: "pending"}, nil
 			}
-			return &models.Order{ID: id, Status: "preparing"}, nil
+			return &models.Order{ID: id, Status: "ready"}, nil
 		},
 		saveFn: func(order *models.Order) error {
 			saved = *order
@@ -208,15 +208,15 @@ func TestUpdateOrderStatus(t *testing.T) {
 	}
 	usecase := NewOrderUsecase(repo)
 
-	got, err := usecase.UpdateOrderStatus(1, "preparing")
+	got, err := usecase.UpdateOrderStatus(1, "ready")
 
 	if err != nil {
 		t.Fatalf("UpdateOrderStatus() error = %v", err)
 	}
-	if saved.ID != 1 || saved.Status != "preparing" {
+	if saved.ID != 1 || saved.Status != "ready" {
 		t.Errorf("saved order = %+v", saved)
 	}
-	if got.ID != 1 || got.Status != "preparing" || findCount != 2 {
+	if got.ID != 1 || got.Status != "ready" || findCount != 2 {
 		t.Errorf("order = %+v, FindByID calls = %d", got, findCount)
 	}
 }
@@ -228,9 +228,39 @@ func TestUpdateOrderStatusReturnsRepositoryError(t *testing.T) {
 	}
 	usecase := NewOrderUsecase(repo)
 
-	got, err := usecase.UpdateOrderStatus(1, "preparing")
+	got, err := usecase.UpdateOrderStatus(1, "ready")
 
 	if got != nil || !errors.Is(err, wantErr) {
 		t.Errorf("order = %+v, error = %v", got, err)
+	}
+}
+
+func TestUpdateOrderStatusRejectsUnsupportedStatus(t *testing.T) {
+	for _, status := range []string{"preparing", "calling", "cancelled", "unknown", "", "READY"} {
+		t.Run(status, func(t *testing.T) {
+			repo := &orderRepositoryMock{
+				findByIDFn: func(uint) (*models.Order, error) { t.Fatal("invalid status must not access database"); return nil, nil },
+				saveFn:     func(*models.Order) error { t.Fatal("invalid status must not be saved"); return nil },
+			}
+			got, err := NewOrderUsecase(repo).UpdateOrderStatus(1, status)
+			if got != nil || !errors.Is(err, ErrInvalidOrderStatus) {
+				t.Fatalf("order = %+v, error = %v", got, err)
+			}
+		})
+	}
+}
+
+func TestOrderStatusLifecycle(t *testing.T) {
+	stored := &models.Order{ID: 1, Status: "pending"}
+	repo := &orderRepositoryMock{
+		findByIDFn: func(uint) (*models.Order, error) { copy := *stored; return &copy, nil },
+		saveFn:     func(order *models.Order) error { *stored = *order; return nil },
+	}
+	uc := NewOrderUsecase(repo)
+	for _, status := range []string{"pending", "ready", "completed"} {
+		got, err := uc.UpdateOrderStatus(1, status)
+		if err != nil || got == nil || got.Status != status || stored.Status != status {
+			t.Fatalf("status = %s, order = %+v, error = %v", status, got, err)
+		}
 	}
 }
