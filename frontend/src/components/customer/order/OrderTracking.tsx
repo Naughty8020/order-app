@@ -9,7 +9,9 @@ interface Props {
 
 export function OrderTracking({ orders, fetchData }: Props) {
 	const activeOrders = orders
-		.filter((order) => order.status !== "completed")
+		.filter(
+			(order) => order.status === "pending" || order.status === "ready",
+		)
 		.slice()
 		.reverse();
 	return (
