@@ -183,41 +183,95 @@ func TestDeleteMenuReturnsNotFound(t *testing.T) {
 	}
 }
 
-func TestMenuPromotions(t *testing.T) {
-	stored := &models.Menu{ID: 1, Name: "コーラ", Price: 200, IsAvailable: true}
-	repo := &menuRepositoryMock{
-		createFn:   func(menu *models.Menu) error { *stored = *menu; return nil },
-		findByIDFn: func(id uint) (*models.Menu, error) { return stored, nil },
-		saveFn:     func(menu *models.Menu) error { return nil },
+func TestUpdateMenuFields(t *testing.T) {
+	name, price, available := "お茶", 350, false
+	for _, tt := range []struct {
+		name  string
+		input UpdateMenuInput
+		want  models.Menu
+	}{
+		{"名前だけ変更", UpdateMenuInput{Name: &name}, models.Menu{ID: 1, Name: "お茶", Price: 200, IsAvailable: true}},
+		{"全項目変更", UpdateMenuInput{Name: &name, Price: &price, IsAvailable: &available}, models.Menu{ID: 1, Name: "お茶", Price: 350, IsAvailable: false}},
+		{"指定なしは維持", UpdateMenuInput{}, models.Menu{ID: 1, Name: "コーラ", Price: 200, IsAvailable: true}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			calls := 0
+			repo := &menuRepositoryMock{
+				findByIDFn: func(id uint) (*models.Menu, error) {
+					return &models.Menu{ID: id, Name: "コーラ", Price: 200, IsAvailable: true}, nil
+				},
+				saveFn: func(m *models.Menu) error {
+					calls++
+					if *m != tt.want {
+						t.Errorf("saved = %+v, want %+v", *m, tt.want)
+					}
+					return nil
+				},
+			}
+			got, err := NewMenuUsecase(repo).UpdateMenu(1, tt.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if *got != tt.want || calls != 1 {
+				t.Errorf("got = %+v, saves = %d", got, calls)
+			}
+		})
 	}
-	uc := NewMenuUsecase(repo)
-	if _, err := uc.CreateMenu(CreateMenuInput{Name: "コーラ", Price: 200, IsAvailable: true, IsRecommended: true, IsFeatured: true}); err != nil {
-		t.Fatal(err)
-	}
-	if !stored.IsRecommended || !stored.IsFeatured {
-		t.Fatalf("promotions not created: %+v", stored)
-	}
-	off := false
-	got, err := uc.UpdateMenu(1, UpdateMenuInput{IsRecommended: &off})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got.IsRecommended || !got.IsFeatured || !got.IsAvailable || got.Name != "コーラ" {
-		t.Fatalf("partial update changed other fields: %+v", got)
-	}
-	got, err = uc.UpdateMenu(1, UpdateMenuInput{IsFeatured: &off})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got.IsFeatured {
-		t.Fatal("featured was not disabled")
-	}
-	on := true
-	got, err = uc.UpdateMenu(1, UpdateMenuInput{IsRecommended: &on})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !got.IsRecommended || got.IsFeatured {
-		t.Fatalf("independent enable failed: %+v", got)
+}
+
+func TestMenuRepositoryFailures(t *testing.T) {
+	dbErr := errors.New("database failed")
+	for _, tt := range []struct {
+		name, operation string
+		failFind        bool
+	}{
+		{"一覧取得失敗", "list", false},
+		{"更新前の取得失敗", "update", true},
+		{"更新保存失敗", "update", false},
+		{"削除前の取得失敗", "delete", true},
+		{"削除失敗", "delete", false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			writes := 0
+			repo := &menuRepositoryMock{
+				findAllFn: func() ([]models.Menu, error) { return nil, dbErr },
+				findByIDFn: func(id uint) (*models.Menu, error) {
+					if tt.failFind {
+						return nil, dbErr
+					}
+					return &models.Menu{ID: id}, nil
+				},
+				saveFn:   func(*models.Menu) error { writes++; return dbErr },
+				deleteFn: func(*models.Menu) error { writes++; return dbErr },
+			}
+			uc := NewMenuUsecase(repo)
+			var err error
+			switch tt.operation {
+			case "list":
+				var got []models.Menu
+				got, err = uc.GetMenus()
+				if got != nil {
+					t.Error("失敗時に結果を返した")
+				}
+			case "update":
+				var got *models.Menu
+				got, err = uc.UpdateMenu(1, UpdateMenuInput{})
+				if got != nil {
+					t.Error("失敗時に結果を返した")
+				}
+			case "delete":
+				err = uc.DeleteMenu(1)
+			}
+			if !errors.Is(err, dbErr) {
+				t.Fatalf("error = %v, want %v", err, dbErr)
+			}
+			wantWrites := 1
+			if tt.failFind || tt.operation == "list" {
+				wantWrites = 0
+			}
+			if writes != wantWrites {
+				t.Errorf("writes = %d, want %d", writes, wantWrites)
+			}
+		})
 	}
 }

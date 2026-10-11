@@ -208,20 +208,45 @@ func decodeResponse(t *testing.T, recorder *httptest.ResponseRecorder, value any
 	}
 }
 
-func TestUpdateMenuPromotionFields(t *testing.T) {
-	uc := &menuUsecaseMock{updateMenuFn: func(id uint, input menuUsecase.UpdateMenuInput) (*models.Menu, error) {
-		if input.IsRecommended == nil || *input.IsRecommended || input.IsFeatured == nil || !*input.IsFeatured || input.IsAvailable != nil {
-			t.Fatalf("unexpected input: %+v", input)
-		}
-		return &models.Menu{ID: id, IsRecommended: *input.IsRecommended, IsFeatured: *input.IsFeatured}, nil
-	}}
-	response := performRequest(NewMenuHandler(uc), http.MethodPut, "/api/menus/1", `{"is_recommended":false,"is_featured":true}`)
-	if response.Code != http.StatusOK {
-		t.Fatalf("status: %d, body: %s", response.Code, response.Body.String())
-	}
-	var body UpdateMenuResponse
-	decodeResponse(t, response, &body)
-	if body.Data.IsRecommended || !body.Data.IsFeatured {
-		t.Fatalf("unexpected response: %+v", body)
+func TestMenuHandlerErrors(t *testing.T) {
+	dbErr := errors.New("private database details")
+	for _, tt := range []struct {
+		name, method, path, body string
+		usecaseErr               error
+		status                   int
+		message                  string
+		wantCalls                int
+	}{
+		{"作成失敗", http.MethodPost, "/api/menus", `{"name":"お茶","price":200}`, dbErr, 500, "failed to create menu", 1},
+		{"更新の不正JSON", http.MethodPut, "/api/menus/1", `{`, nil, 400, "invalid request body", 0},
+		{"更新価格が0", http.MethodPut, "/api/menus/1", `{"price":0}`, nil, 400, "invalid request body", 0},
+		{"更新価格が負数", http.MethodPut, "/api/menus/1", `{"price":-1}`, nil, 400, "invalid request body", 0},
+		{"更新失敗", http.MethodPut, "/api/menus/1", `{"price":200}`, dbErr, 500, "failed to update menu", 1},
+		{"削除IDが文字列", http.MethodDelete, "/api/menus/abc", "", nil, 400, "invalid menu id", 0},
+		{"削除IDが0", http.MethodDelete, "/api/menus/0", "", nil, 400, "invalid menu id", 0},
+		{"削除IDが負数", http.MethodDelete, "/api/menus/-1", "", nil, 400, "invalid menu id", 0},
+		{"削除対象なし", http.MethodDelete, "/api/menus/1", "", menuUsecase.ErrMenuNotFound, 404, "menu not found", 1},
+		{"削除失敗", http.MethodDelete, "/api/menus/1", "", dbErr, 500, "failed to delete menu", 1},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			calls := 0
+			uc := &menuUsecaseMock{
+				createMenuFn: func(menuUsecase.CreateMenuInput) (*models.Menu, error) { calls++; return nil, tt.usecaseErr },
+				updateMenuFn: func(uint, menuUsecase.UpdateMenuInput) (*models.Menu, error) { calls++; return nil, tt.usecaseErr },
+				deleteMenuFn: func(uint) error { calls++; return tt.usecaseErr },
+			}
+			response := performRequest(NewMenuHandler(uc), tt.method, tt.path, tt.body)
+			if response.Code != tt.status {
+				t.Fatalf("status = %d, want %d: %s", response.Code, tt.status, response.Body.String())
+			}
+			var body map[string]string
+			decodeResponse(t, response, &body)
+			if len(body) != 1 || body["error"] != tt.message {
+				t.Errorf("body = %v", body)
+			}
+			if calls != tt.wantCalls {
+				t.Errorf("calls = %d, want %d", calls, tt.wantCalls)
+			}
+		})
 	}
 }

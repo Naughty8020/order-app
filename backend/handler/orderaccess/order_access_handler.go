@@ -36,7 +36,11 @@ func (h *Handler) CreateSession(c *gin.Context) {
 	}
 	sessionToken, expiresAt, err := h.usecase.ExchangeQRToken(req.Token)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired QR token"})
+		if errors.Is(err, ordersession.ErrInvalidQRToken) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired QR token"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
@@ -48,7 +52,7 @@ func (h *Handler) CreateSession(c *gin.Context) {
 
 func (h *Handler) RequireOrderSession(c *gin.Context) {
 	err := h.usecase.ConsumeOrder(c.GetHeader("X-Order-Session"))
-	if err == ordersession.ErrRateLimited {
+	if errors.Is(err, ordersession.ErrRateLimited) {
 		c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
 			"error": "too many orders; please wait before ordering again",
 		})
