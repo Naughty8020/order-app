@@ -234,3 +234,45 @@ func TestUpdateOrderStatusReturnsRepositoryError(t *testing.T) {
 		t.Errorf("order = %+v, error = %v", got, err)
 	}
 }
+
+func TestUpdateOrderStatusWriteFailures(t *testing.T) {
+	dbErr := errors.New("database failed")
+	for _, tt := range []struct {
+		name      string
+		failSave  bool
+		wantReads int
+	}{
+		{"保存失敗時は再取得しない", true, 1},
+		{"保存後の再取得失敗", false, 2},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			reads, writes := 0, 0
+			repo := &orderRepositoryMock{
+				findByIDFn: func(id uint) (*models.Order, error) {
+					reads++
+					if reads == 2 {
+						return nil, dbErr
+					}
+					return &models.Order{ID: id, Status: "pending"}, nil
+				},
+				saveFn: func(o *models.Order) error {
+					writes++
+					if o.ID != 7 || o.Status != "ready" {
+						t.Errorf("saved = %+v", o)
+					}
+					if tt.failSave {
+						return dbErr
+					}
+					return nil
+				},
+			}
+			got, err := NewOrderUsecase(repo).UpdateOrderStatus(7, "ready")
+			if got != nil || !errors.Is(err, dbErr) {
+				t.Errorf("got = %+v, error = %v", got, err)
+			}
+			if reads != tt.wantReads || writes != 1 {
+				t.Errorf("reads = %d, writes = %d", reads, writes)
+			}
+		})
+	}
+}

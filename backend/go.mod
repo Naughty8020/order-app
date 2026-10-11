@@ -3,6 +3,7 @@ module order-system
 go 1.25.11
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/gin-contrib/cors v1.7.8
 	github.com/gin-gonic/gin v1.12.0
 	gorm.io/driver/mysql v1.6.0
