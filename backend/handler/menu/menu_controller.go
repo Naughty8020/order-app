@@ -36,9 +36,11 @@ func (h *menuHandlerImpl) CreateMenu(c *gin.Context) {
 	}
 
 	createdMenu, err := h.menuUsecase.CreateMenu(menuUsecase.CreateMenuInput{
-		Name:        req.Name,
-		Price:       req.Price,
-		IsAvailable: req.IsAvailable,
+		Name:          req.Name,
+		Price:         req.Price,
+		IsAvailable:   req.IsAvailable,
+		IsRecommended: req.IsRecommended,
+		IsFeatured:    req.IsFeatured,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create menu"})
@@ -71,9 +73,11 @@ func (h *menuHandlerImpl) UpdateMenu(c *gin.Context) {
 	}
 
 	updatedMenu, err := h.menuUsecase.UpdateMenu(id, menuUsecase.UpdateMenuInput{
-		Name:        req.Name,
-		Price:       req.Price,
-		IsAvailable: req.IsAvailable,
+		Name:          req.Name,
+		Price:         req.Price,
+		IsAvailable:   req.IsAvailable,
+		IsRecommended: req.IsRecommended,
+		IsFeatured:    req.IsFeatured,
 	})
 	if err != nil {
 		respondMenuError(c, err, "failed to update menu")

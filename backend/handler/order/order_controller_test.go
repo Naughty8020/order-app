@@ -138,20 +138,20 @@ func TestGetOrdersHandlerReturnsInternalServerError(t *testing.T) {
 func TestUpdateOrderStatusHandler(t *testing.T) {
 	usecase := &orderUsecaseMock{
 		updateOrderStatusFn: func(id uint, status string) (*models.Order, error) {
-			if id != 1 || status != "preparing" {
+			if id != 1 || status != "ready" {
 				t.Errorf("UpdateOrderStatus() id = %d, status = %q", id, status)
 			}
 			return &models.Order{ID: id, Status: status}, nil
 		},
 	}
-	recorder := performOrderRequest(NewOrderHandler(usecase), http.MethodPut, "/api/orders/1/status", `{"status":"preparing"}`)
+	recorder := performOrderRequest(NewOrderHandler(usecase), http.MethodPut, "/api/orders/1/status", `{"status":"ready"}`)
 
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d; body = %s", recorder.Code, http.StatusOK, recorder.Body.String())
 	}
 	var response UpdateOrderStatusResponse
 	decodeOrderResponse(t, recorder, &response)
-	if response.ID != 1 || response.Status != "preparing" {
+	if response.ID != 1 || response.Status != "ready" {
 		t.Errorf("response = %+v", response)
 	}
 }
@@ -162,7 +162,7 @@ func TestUpdateOrderStatusHandlerRejectsInvalidRequest(t *testing.T) {
 		path string
 		body string
 	}{
-		{name: "不正なID", path: "/api/orders/abc/status", body: `{"status":"preparing"}`},
+		{name: "不正なID", path: "/api/orders/abc/status", body: `{"status":"ready"}`},
 		{name: "不正なJSON", path: "/api/orders/1/status", body: `{"status":`},
 		{name: "空のステータス", path: "/api/orders/1/status", body: `{"status":""}`},
 	}
@@ -189,7 +189,7 @@ func TestUpdateOrderStatusHandlerReturnsInternalServerError(t *testing.T) {
 			return nil, errors.New("update failed")
 		},
 	}
-	recorder := performOrderRequest(NewOrderHandler(usecase), http.MethodPut, "/api/orders/1/status", `{"status":"preparing"}`)
+	recorder := performOrderRequest(NewOrderHandler(usecase), http.MethodPut, "/api/orders/1/status", `{"status":"ready"}`)
 
 	if recorder.Code != http.StatusInternalServerError {
 		t.Errorf("status = %d, want %d", recorder.Code, http.StatusInternalServerError)
@@ -214,5 +214,18 @@ func decodeOrderResponse(t *testing.T, recorder *httptest.ResponseRecorder, valu
 	t.Helper()
 	if err := json.Unmarshal(recorder.Body.Bytes(), value); err != nil {
 		t.Fatalf("failed to decode response: %v; body = %s", err, recorder.Body.String())
+	}
+}
+
+func TestUpdateOrderStatusHandlerRejectsUnsupportedStatus(t *testing.T) {
+	uc := &orderUsecaseMock{updateOrderStatusFn: func(id uint, status string) (*models.Order, error) {
+		if status != "preparing" {
+			t.Fatalf("unexpected status %q", status)
+		}
+		return nil, orderUsecase.ErrInvalidOrderStatus
+	}}
+	response := performOrderRequest(NewOrderHandler(uc), http.MethodPut, "/api/orders/1/status", `{"status":"preparing"}`)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, body = %s", response.Code, response.Body.String())
 	}
 }

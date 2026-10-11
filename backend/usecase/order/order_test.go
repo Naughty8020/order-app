@@ -199,7 +199,7 @@ func TestUpdateOrderStatus(t *testing.T) {
 			if findCount == 1 {
 				return &models.Order{ID: id, Status: "pending"}, nil
 			}
-			return &models.Order{ID: id, Status: "preparing"}, nil
+			return &models.Order{ID: id, Status: "ready"}, nil
 		},
 		saveFn: func(order *models.Order) error {
 			saved = *order
@@ -208,15 +208,15 @@ func TestUpdateOrderStatus(t *testing.T) {
 	}
 	usecase := NewOrderUsecase(repo)
 
-	got, err := usecase.UpdateOrderStatus(1, "preparing")
+	got, err := usecase.UpdateOrderStatus(1, "ready")
 
 	if err != nil {
 		t.Fatalf("UpdateOrderStatus() error = %v", err)
 	}
-	if saved.ID != 1 || saved.Status != "preparing" {
+	if saved.ID != 1 || saved.Status != "ready" {
 		t.Errorf("saved order = %+v", saved)
 	}
-	if got.ID != 1 || got.Status != "preparing" || findCount != 2 {
+	if got.ID != 1 || got.Status != "ready" || findCount != 2 {
 		t.Errorf("order = %+v, FindByID calls = %d", got, findCount)
 	}
 }
@@ -228,7 +228,7 @@ func TestUpdateOrderStatusReturnsRepositoryError(t *testing.T) {
 	}
 	usecase := NewOrderUsecase(repo)
 
-	got, err := usecase.UpdateOrderStatus(1, "preparing")
+	got, err := usecase.UpdateOrderStatus(1, "ready")
 
 	if got != nil || !errors.Is(err, wantErr) {
 		t.Errorf("order = %+v, error = %v", got, err)

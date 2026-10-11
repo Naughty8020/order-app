@@ -1,5 +1,10 @@
 import { type FormEvent, useState } from "react";
-import { createMenu, deleteMenu, updateMenuAvailability } from "../../api/menu";
+import {
+	createMenu,
+	deleteMenu,
+	updateMenuAvailability,
+	updateMenuPromotion,
+} from "../../api/menu";
 import type { Menu } from "../../cart";
 import type { ShowToast } from "../useToast";
 export function useMenuManagement(
@@ -49,6 +54,27 @@ export function useMenuManagement(
 		}
 	};
 
+	const [updatingPromotion, setUpdatingPromotion] = useState<number | null>(
+		null,
+	);
+	const handleTogglePromotion = async (
+		menu: Menu,
+		field: "is_recommended" | "is_featured",
+	) => {
+		if (updatingPromotion !== null) return;
+		setUpdatingPromotion(menu.id);
+		try {
+			await updateMenuPromotion(menu.id, field, !menu[field]);
+			await refreshMenus();
+			showToast(
+				`${menu.name} の${field === "is_recommended" ? "おすすめ" : "イチオシ"}を${menu[field] ? "解除" : "設定"}しました`,
+			);
+		} catch (err: unknown) {
+			showToast(err instanceof Error ? err.message : String(err), "error");
+		} finally {
+			setUpdatingPromotion(null);
+		}
+	};
 	// Staff: Delete Menu
 	const handleDeleteMenu = async (menuId: number) => {
 		if (!window.confirm("このメニューを削除してよろしいですか？")) return;
@@ -72,5 +98,7 @@ export function useMenuManagement(
 		handleAddMenu,
 		handleToggleAvailable,
 		handleDeleteMenu,
+		handleTogglePromotion,
+		updatingPromotion,
 	};
 }

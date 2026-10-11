@@ -44,7 +44,7 @@ function App() {
 			<CustomerHeader />
 
 			{/* ===== MAIN CONTENT ===== */}
-			<main className="relative z-10 flex-1 w-full px-6 md:px-12 max-w-[1400px] mx-auto">
+			<main className="relative z-10 flex-1 w-full px-4 md:px-12 max-w-[1400px] mx-auto">
 				<CustomerError error={error} onRetry={fetchData} />
 
 				{/* ===== 1. CUSTOMER MODE ===== */}

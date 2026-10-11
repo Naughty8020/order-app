@@ -146,7 +146,7 @@ it("retains the customer cart when switching between staff and customer modes", 
 	await screen.findByText("コーラ");
 	fireEvent.click(screen.getByRole("button", { name: /顧客メニュー/ }));
 	fireEvent.click(
-		await screen.findByRole("button", { name: "＋ カートに追加" }),
+		await screen.findByRole("button", { name: "コーラをカートに追加" }),
 	);
 	fireEvent.click(screen.getByRole("button", { name: /スタッフ画面/ }));
 	fireEvent.click(screen.getByRole("button", { name: /顧客メニュー/ }));

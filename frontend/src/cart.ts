@@ -3,6 +3,8 @@ export interface Menu {
 	name: string;
 	price: number;
 	is_available: boolean;
+	is_recommended?: boolean;
+	is_featured?: boolean;
 }
 
 export interface CartItem {

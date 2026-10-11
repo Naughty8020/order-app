@@ -1,6 +1,7 @@
 package order
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -136,9 +137,11 @@ func (h *orderHandlerImpl) UpdateOrderStatus(c *gin.Context) {
 		req.Status,
 	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		if errors.Is(err, orderUsecase.ErrInvalidOrderStatus) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

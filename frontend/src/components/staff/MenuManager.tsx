@@ -11,8 +11,15 @@ export function MenuManager({
 	handleAddMenu,
 	handleToggleAvailable,
 	handleDeleteMenu,
+	handleTogglePromotion,
+	updatingPromotion,
 }: {
 	menus: Menu[];
+	updatingPromotion: number | null;
+	handleTogglePromotion: (
+		menu: Menu,
+		field: "is_recommended" | "is_featured",
+	) => Promise<void>;
 	newMenuName: string;
 	setNewMenuName: (value: string) => void;
 	newMenuPrice: string;
@@ -83,7 +90,7 @@ export function MenuManager({
 						{menus.map((menu) => (
 							<div
 								key={menu.id}
-								className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-3 flex justify-between items-center"
+								className="bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-3 flex flex-wrap justify-between items-center gap-3"
 							>
 								<div className="max-w-[140px] overflow-hidden">
 									<p className="text-[13px] font-extrabold text-white truncate mb-0.5">
@@ -92,6 +99,22 @@ export function MenuManager({
 									<p className="text-[11px] text-zinc-500 font-bold">
 										¥{menu.price.toLocaleString()}
 									</p>
+								</div>
+								<div className="flex gap-2 w-full order-last">
+									{(["is_recommended", "is_featured"] as const).map((field) => (
+										<button
+											key={field}
+											type="button"
+											aria-label={`${menu.name}の${field === "is_recommended" ? "おすすめ" : "イチオシ"}`}
+											aria-pressed={!!menu[field]}
+											disabled={updatingPromotion !== null}
+											onClick={() => handleTogglePromotion(menu, field)}
+											className={`flex-1 rounded-lg border px-2 py-2 text-xs font-bold transition disabled:opacity-50 ${menu[field] ? "border-pink-400 text-pink-300 bg-pink-500/15" : "border-white/10 text-zinc-400 hover:bg-white/5"}`}
+										>
+											{field === "is_recommended" ? "おすすめ" : "イチオシ"}
+											{menu[field] ? " ON" : " OFF"}
+										</button>
+									))}
 								</div>
 								<div className="flex items-center gap-1.5">
 									<button

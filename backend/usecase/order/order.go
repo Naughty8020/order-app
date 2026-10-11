@@ -6,6 +6,8 @@ import (
 	"order-system/models"
 )
 
+var ErrInvalidOrderStatus = errors.New("status must be pending, ready, or completed")
+
 type OrderUsecase interface {
 	CreateOrder(items []CreateOrderItemInput) (*models.Order, error)
 	GetOrders() ([]models.Order, error)
@@ -76,6 +78,12 @@ func (u *orderUsecaseImpl) UpdateOrderStatus(
 	id uint,
 	status string,
 ) (*models.Order, error) {
+
+	switch status {
+	case "pending", "ready", "completed":
+	default:
+		return nil, ErrInvalidOrderStatus
+	}
 
 	order, err := u.repo.FindByID(id)
 	if err != nil {
