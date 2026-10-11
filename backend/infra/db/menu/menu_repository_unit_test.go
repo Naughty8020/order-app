@@ -99,8 +99,8 @@ func TestMenuWritesUnit(t *testing.T) {
 		args      []driver.Value
 		run       func(*MenuRepository, *models.Menu) error
 	}{
-		{"作成", "INSERT INTO `menus` (`name`,`price`,`is_available`,`deleted_at`) VALUES (?,?,?,?)", []driver.Value{"お茶", 200, true, nil}, (*MenuRepository).Create},
-		{"ゼロ値を含む更新", "UPDATE `menus` SET `name`=?,`price`=?,`is_available`=?,`deleted_at`=? WHERE `menus`.`deleted_at` IS NULL AND `id` = ?", []driver.Value{"お茶", 0, false, nil, 7}, (*MenuRepository).Save},
+		{"作成", "INSERT INTO `menus` (`name`,`price`,`is_available`,`is_recommended`,`is_featured`,`deleted_at`) VALUES (?,?,?,?,?,?)", []driver.Value{"お茶", 200, true, false, false, nil}, (*MenuRepository).Create},
+		{"ゼロ値を含む更新", "UPDATE `menus` SET `name`=?,`price`=?,`is_available`=?,`is_recommended`=?,`is_featured`=?,`deleted_at`=? WHERE `menus`.`deleted_at` IS NULL AND `id` = ?", []driver.Value{"お茶", 0, false, false, false, nil, 7}, (*MenuRepository).Save},
 		{"論理削除", "UPDATE `menus` SET `deleted_at`=? WHERE `menus`.`id` = ? AND `menus`.`deleted_at` IS NULL", []driver.Value{testsql.Now(), 7}, (*MenuRepository).Delete},
 	} {
 		t.Run(op.name, func(t *testing.T) {
