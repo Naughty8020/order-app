@@ -23,10 +23,11 @@ type OrderAccessUsecase interface {
 type orderAccessUsecase struct {
 	repo   repository.OrderSessionRepository
 	secret []byte
+	now    func() time.Time
 }
 
 func NewOrderAccessUsecase(repo repository.OrderSessionRepository, secret string) *orderAccessUsecase {
-	return &orderAccessUsecase{repo: repo, secret: []byte(secret)}
+	return &orderAccessUsecase{repo: repo, secret: []byte(secret), now: time.Now}
 }
 
 var (
@@ -43,7 +44,7 @@ const (
 )
 
 func (u *orderAccessUsecase) CurrentQRToken() (string, time.Time) {
-	now := time.Now()
+	now := u.now()
 
 	bucket := now.Unix() / int64(QRRotationInterval/time.Second)
 
@@ -72,7 +73,7 @@ func (u *orderAccessUsecase) ExchangeQRToken(
 		return "", time.Time{}, err
 	}
 
-	now := time.Now()
+	now := u.now()
 	expiresAt := now.Add(SessionLifetime)
 
 	// 生TokenではなくHashをDBに保存
@@ -97,7 +98,7 @@ func (u *orderAccessUsecase) ConsumeOrder(
 	sessionToken string,
 ) error {
 
-	now := time.Now()
+	now := u.now()
 
 	tokenHash := hashToken(sessionToken)
 
@@ -152,7 +153,7 @@ func (u *orderAccessUsecase) validateQRToken(token string) bool {
 	}
 
 	currentBucket :=
-		time.Now().Unix() / int64(QRRotationInterval/time.Second)
+		u.now().Unix() / int64(QRRotationInterval/time.Second)
 
 	if bucket != currentBucket {
 		return false
