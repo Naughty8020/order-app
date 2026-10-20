@@ -21,6 +21,7 @@ export async function updateOrderStatus(
 }
 
 export interface OrderItem {
+	name?: string;
 	id: number;
 	order_id: number;
 	menu_id: number;
@@ -41,7 +42,10 @@ export interface CreateOrderRequest {
 }
 
 export type CreateOrderResult =
-	| { ok: true; order: { id?: number } }
+	| {
+			ok: true;
+			order: Order & { receipt_token: string; receipt_expires_at: string };
+	  }
 	| { ok: false; status: number; error: string };
 
 export async function getOrders(): Promise<Order[]> {
@@ -49,6 +53,20 @@ export async function getOrders(): Promise<Order[]> {
 	if (!response.ok) throw new Error("注文履歴の取得に失敗しました");
 	const data: { orders?: Order[] } = await response.json();
 	return data.orders || [];
+}
+
+export async function getPublicOrders(): Promise<Order[]> {
+	const response = await fetch(`${getApiBase()}/orders/public`, {
+		cache: "no-store",
+	});
+	if (!response.ok) throw new Error("注文状況の取得に失敗しました");
+	const data: { orders: { id: number; status: string }[] } =
+		await response.json();
+	return data.orders.map((order) => ({
+		...order,
+		created_at: "",
+		order_items: [],
+	}));
 }
 
 export async function createOrder(

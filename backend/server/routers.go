@@ -60,7 +60,7 @@ func NewRouter(db *gorm.DB) (*gin.Engine, error) {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: allowedOrigins,
 		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders: []string{"Origin", "Content-Type", "X-Order-Session", "Authorization"},
+		AllowHeaders: []string{"Origin", "Content-Type", "X-Order-Session", "X-Order-Receipt", "Authorization"},
 	}))
 
 	sessionRepo := orderSessionDB.NewOrderSessionRepository(db)
@@ -95,7 +95,9 @@ func NewRouter(db *gorm.DB) (*gin.Engine, error) {
 	orderGroup := r.Group("/api/orders")
 	{
 		orderGroup.POST("", accessHandler.RequireOrderSession, orderHandler.CreateOrder)
-		orderGroup.GET("", orderHandler.GetOrders)
+		orderGroup.GET("", auth.RequireAdmin, orderHandler.GetOrders)
+		orderGroup.GET("/public", orderHandler.GetPublicOrders)
+		orderGroup.GET("/:id/receipt", orderHandler.GetReceipt)
 		orderGroup.PUT("/:id/status", auth.RequireAdmin, orderHandler.UpdateOrderStatus)
 	}
 

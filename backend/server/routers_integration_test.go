@@ -96,7 +96,10 @@ func TestIntegrationOrderingFlow(t *testing.T) {
 	}
 	session := orderSession(t, r, auth)
 	body := fmt.Sprintf(`{"items":[{"menu_id":%d,"quantity":2}]}`, menu.ID)
-	created := decode[models.Order](t, api(t, r, "POST", "/api/orders", body, session, 201))
+	created := decode[struct {
+		models.Order
+		ReceiptToken string `json:"receipt_token"`
+	}](t, api(t, r, "POST", "/api/orders", body, session, 201))
 	if created.ID == 0 || created.Status != "pending" || len(created.OrderItems) != 1 {
 		t.Fatalf("order = %+v", created)
 	}
@@ -112,6 +115,21 @@ func TestIntegrationOrderingFlow(t *testing.T) {
 	if len(stored.OrderItems) != 1 || stored.OrderItems[0].Quantity != 2 {
 		t.Fatalf("stored = %+v", stored)
 	}
+	receiptPath := fmt.Sprintf("/api/orders/%d/receipt", created.ID)
+	receiptHeaders := map[string]string{"X-Order-Receipt": created.ReceiptToken}
+	if len(created.ReceiptToken) != 43 || stored.ReceiptTokenHash == created.ReceiptToken {
+		t.Fatal("receipt credential was not hashed")
+	}
+	api(t, r, "GET", receiptPath, "", nil, 410)
+	api(t, r, "GET", receiptPath, "", map[string]string{"X-Order-Receipt": strings.Repeat("z", 43)}, 410)
+	receipt := decode[models.Order](t, api(t, r, "GET", receiptPath, "", receiptHeaders, 200))
+	if receipt.ID != created.ID || len(receipt.OrderItems) != 1 {
+		t.Fatal("receipt missing items")
+	}
+	public := string(api(t, r, "GET", "/api/orders/public", "", nil, 200))
+	if strings.Contains(public, "order_items") || strings.Contains(public, "receipt") || strings.Contains(public, menu.Name) {
+		t.Fatal("public endpoint exposed details")
+	}
 	for _, status := range []string{"ready", "completed"} {
 		updated := decode[models.Order](t, api(t, r, "PUT", fmt.Sprintf("/api/orders/%d/status", created.ID), fmt.Sprintf(`{"status":%q}`, status), auth, 200))
 		if updated.Status != status {
@@ -120,9 +138,17 @@ func TestIntegrationOrderingFlow(t *testing.T) {
 	}
 	orders := decode[struct {
 		Orders []models.Order `json:"orders"`
-	}](t, api(t, r, "GET", "/api/orders", "", nil, 200))
+	}](t, api(t, r, "GET", "/api/orders", "", auth, 200))
 	if len(orders.Orders) != 1 || orders.Orders[0].Status != "completed" {
 		t.Fatalf("orders = %+v", orders)
+	}
+	// Receipt access remains valid after the ordering session expires.
+	if err := db.Model(&models.OrderSession{}).Where("1 = 1").Update("expires_at", time.Now().Add(-time.Hour)).Error; err != nil {
+		t.Fatal(err)
+	}
+	receipt = decode[models.Order](t, api(t, r, "GET", receiptPath, "", receiptHeaders, 200))
+	if receipt.Status != "completed" {
+		t.Fatal("completed receipt unavailable")
 	}
 	// 価格変更が過去の注文明細に影響しないこと、falseも保存できることを確認。
 	updated := decode[struct {
@@ -152,6 +178,42 @@ func TestIntegrationOrderingFlow(t *testing.T) {
 	if !deleted.DeletedAt.Valid {
 		t.Error("menu was not soft-deleted")
 	}
+	receipt = decode[models.Order](t, api(t, r, "GET", receiptPath, "", receiptHeaders, 200))
+	if receipt.OrderItems[0].Name != menu.Name || receipt.OrderItems[0].Price != 200 {
+		t.Fatal("receipt changed after menu edit/delete")
+	}
+	if err := db.Model(&models.Order{}).Where("id = ?", created.ID).Update("receipt_expires_at", time.Now().Add(-time.Second)).Error; err != nil {
+		t.Fatal(err)
+	}
+	api(t, r, "GET", receiptPath, "", receiptHeaders, 410)
+}
+
+func TestIntegrationLegacyOrderAndPublicProjection(t *testing.T) {
+	r, db := integrationApp(t)
+	auth := login(t, r)
+	// Simulate pre-receipt rows after AutoMigrate adds a nullable expiry.
+	if err := db.Exec("INSERT INTO orders (id, status, created_at, receipt_expires_at) VALUES (101, 'pending', NOW(), NULL), (102, 'ready', NOW(), NULL), (103, 'completed', NOW(), NULL)").Error; err != nil {
+		t.Fatal(err)
+	}
+	public := string(api(t, r, "GET", "/api/orders/public", "", nil, 200))
+	if public != `{"orders":[{"id":101,"status":"pending"},{"id":102,"status":"ready"}]}` {
+		t.Fatalf("public response = %s", public)
+	}
+	api(t, r, "GET", "/api/orders/101/receipt", "", map[string]string{"X-Order-Receipt": strings.Repeat("a", 43)}, 410)
+	for _, status := range []string{"ready", "completed"} {
+		api(t, r, "PUT", "/api/orders/101/status", fmt.Sprintf(`{"status":%q}`, status), auth, 200)
+		var saved models.Order
+		if err := db.First(&saved, 101).Error; err != nil {
+			t.Fatal(err)
+		}
+		if saved.Status != status || saved.ReceiptExpiresAt != nil {
+			t.Fatalf("legacy order status=%s expiry=%v", saved.Status, saved.ReceiptExpiresAt)
+		}
+	}
+	api(t, r, "PUT", "/api/orders/102/status", `{"status":"completed"}`, auth, 200)
+	if public := string(api(t, r, "GET", "/api/orders/public", "", nil, 200)); public != `{"orders":[]}` {
+		t.Fatalf("empty public response = %s", public)
+	}
 }
 
 func TestIntegrationRejectedRequests(t *testing.T) {
@@ -164,6 +226,7 @@ func TestIntegrationRejectedRequests(t *testing.T) {
 		{"ログイン入力不足", "POST", "/api/login", `{}`, false, 400},
 		{"管理者認証なしで作成", "POST", "/api/menus", `{"name":"お茶","price":200}`, false, 401},
 		{"認証なしでQR取得", "GET", "/api/order-access/qr", "", false, 401},
+		{"認証なしで全注文取得", "GET", "/api/orders", "", false, 401},
 		{"無効なQR", "POST", "/api/order-access/session", `{"token":"invalid"}`, false, 401},
 		{"セッションなしで注文", "POST", "/api/orders", `{"items":[{"menu_id":1,"quantity":1}]}`, false, 401},
 		{"メニュー価格が負数", "POST", "/api/menus", `{"name":"お茶","price":-1}`, true, 400},

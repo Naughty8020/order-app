@@ -9,13 +9,25 @@ const fetchMock = vi.fn<typeof fetch>();
 beforeEach(() => {
 	window.history.replaceState({}, "", "/");
 	window.sessionStorage.clear();
+	window.localStorage.clear();
 	vi.stubGlobal("fetch", fetchMock);
 	fetchMock.mockImplementation(async (input, init) => {
 		const url = String(input);
 		if (url.endsWith("/menus")) return Response.json({ data: [menu] });
 		if (url.endsWith("/orders") && init?.method === "POST") {
-			return Response.json({ id: 42 });
+			return Response.json({
+				id: 42,
+				receipt_token: "a".repeat(43),
+				receipt_expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+			});
 		}
+		if (url.endsWith("/orders/42/receipt"))
+			return Response.json({
+				id: 42,
+				status: "pending",
+				created_at: new Date().toISOString(),
+				order_items: [],
+			});
 		if (url.endsWith("/orders")) return Response.json({ orders: [] });
 		throw new Error(`Unexpected request: ${url}`);
 	});
@@ -96,6 +108,20 @@ describe("customer ordering", () => {
 		);
 		expect(result.current.cart).toEqual({});
 		expect(result.current.successModal).toEqual({ show: true, orderId: 42 });
+		expect(result.current.orders[0].id).toBe(42);
+	});
+
+	it("restores history after reopening without a valid ordering session", async () => {
+		saveSession(new Date(Date.now() + 60_000).toISOString());
+		const first = renderHook(() => useCustomerOrder());
+		await waitFor(() => expect(first.result.current.loading).toBe(false));
+		act(() => first.result.current.addToCart(menu));
+		await act(() => first.result.current.submitOrder());
+		first.unmount();
+		window.sessionStorage.clear();
+		const reopened = renderHook(() => useCustomerOrder());
+		await waitFor(() => expect(reopened.result.current.orders[0]?.id).toBe(42));
+		expect(reopened.result.current.orderAccessStatus).toBe("missing");
 	});
 
 	it("keeps the cart and rejects ordering with an expired session", async () => {
