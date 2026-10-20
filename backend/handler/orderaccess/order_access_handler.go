@@ -15,6 +15,13 @@ type Handler struct {
 	usecase ordersession.OrderAccessUsecase
 }
 
+const orderPersistedContextKey = "order.persisted"
+
+// MarkOrderPersisted records that the order transaction committed successfully.
+func MarkOrderPersisted(c *gin.Context) {
+	c.Set(orderPersistedContextKey, true)
+}
+
 func NewHandler(usecase ordersession.OrderAccessUsecase) *Handler {
 	return &Handler{usecase: usecase}
 }
@@ -75,7 +82,8 @@ func (h *Handler) RequireOrderSession(c *gin.Context) {
 	}
 
 	defer func() {
-		if c.Writer.Status() == http.StatusCreated {
+		persisted, _ := c.Get(orderPersistedContextKey)
+		if persisted == true {
 			return
 		}
 		if err := h.usecase.RefundOrder(sessionToken); err != nil {

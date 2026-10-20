@@ -140,12 +140,12 @@ func (u *orderUsecaseImpl) CreateOrder(
 		return nil, err
 	}
 
-	saved, err := u.repo.FindByID(order.ID)
-	if err != nil {
-		return nil, err
+	for index := range orderItems {
+		orderItems[index].Menu = *menus[index]
 	}
-	saved.ReceiptToken = token
-	return saved, nil
+	order.OrderItems = orderItems
+	order.ReceiptToken = token
+	return order, nil
 }
 
 func (u *orderUsecaseImpl) UpdateOrderStatus(

@@ -90,6 +90,7 @@ func TestRequireOrderSessionKeepsSuccessfulOrderConsumption(t *testing.T) {
 	})
 	router := gin.New()
 	router.POST("/orders", handler.RequireOrderSession, func(c *gin.Context) {
+		MarkOrderPersisted(c)
 		c.JSON(http.StatusCreated, gin.H{"result": "ok"})
 	})
 	request := httptest.NewRequest(http.MethodPost, "/orders", nil)
@@ -98,6 +99,28 @@ func TestRequireOrderSessionKeepsSuccessfulOrderConsumption(t *testing.T) {
 	router.ServeHTTP(response, request)
 
 	if response.Code != http.StatusCreated || refundCalls != 0 {
+		t.Fatalf("status = %d, refund calls = %d", response.Code, refundCalls)
+	}
+}
+
+func TestRequireOrderSessionDoesNotRefundAfterPersistence(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	refundCalls := 0
+	handler := NewHandler(accessStub{
+		consume: func(string) error { return nil },
+		refund:  func(string) error { refundCalls++; return nil },
+	})
+	router := gin.New()
+	router.POST("/orders", handler.RequireOrderSession, func(c *gin.Context) {
+		MarkOrderPersisted(c)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "response failed"})
+	})
+	request := httptest.NewRequest(http.MethodPost, "/orders", nil)
+	request.Header.Set("X-Order-Session", "session-token")
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+
+	if response.Code != http.StatusInternalServerError || refundCalls != 0 {
 		t.Fatalf("status = %d, refund calls = %d", response.Code, refundCalls)
 	}
 }

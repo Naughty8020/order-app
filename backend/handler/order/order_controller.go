@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	orderAccessHandler "order-system/handler/orderaccess"
 	orderUsecase "order-system/usecase/order"
 
 	"github.com/gin-gonic/gin"
@@ -87,6 +88,7 @@ func (h *orderHandlerImpl) CreateOrder(c *gin.Context) {
 		})
 		return
 	}
+	orderAccessHandler.MarkOrderPersisted(c)
 
 	res := CreateOrderResponse{
 		ReceiptToken:     createdOrder.ReceiptToken,

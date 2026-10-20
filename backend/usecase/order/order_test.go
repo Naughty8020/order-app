@@ -67,9 +67,6 @@ func TestCreateOrder(t *testing.T) {
 			createdItems = append(createdItems, *item)
 			return nil
 		},
-		findByIDFn: func(id uint) (*models.Order, error) {
-			return &models.Order{ID: id, Status: "pending", OrderItems: createdItems}, nil
-		},
 	}
 	usecase := NewOrderUsecase(repo)
 
@@ -83,6 +80,9 @@ func TestCreateOrder(t *testing.T) {
 	}
 	if got.ID != 10 || got.Status != "pending" {
 		t.Errorf("CreateOrder() = %+v", got)
+	}
+	if len(got.OrderItems) != 2 || got.OrderItems[0].Menu.Name != "シャーリー・テンプル風" {
+		t.Errorf("returned items = %+v", got.OrderItems)
 	}
 	if len(createdItems) != 2 {
 		t.Fatalf("created items = %d, want 2", len(createdItems))
