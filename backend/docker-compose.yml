@@ -24,7 +24,7 @@ services:
   db:
     image: mysql:8.0
     ports:
-      - "13306:3306"
+      - "3306:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=secretpassword
       - MYSQL_DATABASE=order_system_db
