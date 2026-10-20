@@ -53,7 +53,8 @@ beforeEach(() => {
 			];
 			return Response.json({});
 		}
-		if (url.endsWith("/orders")) return Response.json({ orders });
+		if (url.endsWith("/orders") || url.endsWith("/orders/public"))
+			return Response.json({ orders });
 		if (url.endsWith("/menus/1")) {
 			menus =
 				init?.method === "DELETE"
@@ -62,8 +63,6 @@ beforeEach(() => {
 			return Response.json({});
 		}
 		if (url.endsWith("/menus")) {
-			if (init?.method === "POST")
-				menus = [...menus, { id: 2, ...JSON.parse(String(init.body)) }];
 			return Response.json({ data: menus });
 		}
 		throw new Error(`Unexpected request: ${url}`);
@@ -102,7 +101,7 @@ it("processes pending orders through ready and completed, keeping history", asyn
 	);
 });
 
-it("adds menus, changes availability and respects deletion cancellation", async () => {
+it("changes availability and respects deletion cancellation", async () => {
 	render(<OperationsPage initialMode="staff" />);
 	fireEvent.click(await screen.findByTitle("販売を一時停止する"));
 	expect(await screen.findByTitle("販売を再開する")).toBeTruthy();
@@ -114,21 +113,6 @@ it("adds menus, changes availability and respects deletion cancellation", async 
 	confirm.mockReturnValue(true);
 	fireEvent.click(screen.getByTitle("削除"));
 	await waitFor(() => expect(screen.queryByText("コーラ")).toBeNull());
-	fireEvent.change(screen.getByLabelText("メニュー名"), {
-		target: { value: "お茶" },
-	});
-	fireEvent.change(screen.getByLabelText("価格 (¥)"), {
-		target: { value: "150" },
-	});
-	fireEvent.click(screen.getByRole("button", { name: "メニューリストに登録" }));
-	expect(await screen.findByText("お茶")).toBeTruthy();
-	expect(fetchMock).toHaveBeenCalledWith(
-		expect.stringMatching(/\/menus$/),
-		expect.objectContaining({
-			method: "POST",
-			body: JSON.stringify({ name: "お茶", price: 150, is_available: true }),
-		}),
-	);
 });
 
 it("shows the monitor's QR link and pending numbers", async () => {

@@ -1,21 +1,29 @@
 import { useState } from "react";
-import { type Cart, changeCartQuantity, type Menu } from "../../cart";
+import {
+	type Cart,
+	changeCartQuantity,
+	getCartItemKey,
+	type Menu,
+} from "../../cart";
 import type { ShowToast } from "../useToast";
 export function useCart(showToast: ShowToast) {
 	const [cart, setCart] = useState<Cart>({});
 	const [isCartOpen, setIsCartOpen] = useState(false);
 	// Add to Cart
-	const addToCart = (menu: Menu) => {
+	const addToCart = (menu: Menu, option?: string) => {
 		if (!menu.is_available) {
 			showToast("このメニューは現在売り切れです", "error");
 			return;
 		}
+		const key = getCartItemKey(menu.id, option);
 		setCart((prev) => {
-			const current = prev[menu.id];
+			const current = prev[key];
 			return {
 				...prev,
-				[menu.id]: {
+				[key]: {
+					key,
 					menu,
+					option,
 					quantity: current ? current.quantity + 1 : 1,
 				},
 			};
@@ -24,15 +32,15 @@ export function useCart(showToast: ShowToast) {
 	};
 
 	// Update Cart Quantity
-	const updateCartQty = (menuId: number, delta: number) => {
-		setCart((prev) => changeCartQuantity(prev, menuId, delta));
+	const updateCartQty = (itemKey: string | number, delta: number) => {
+		setCart((prev) => changeCartQuantity(prev, itemKey, delta));
 	};
 
 	// Remove from Cart
-	const removeFromCart = (menuId: number) => {
+	const removeFromCart = (itemKey: string | number) => {
 		setCart((prev) => {
 			const copy = { ...prev };
-			delete copy[menuId];
+			delete copy[String(itemKey)];
 			return copy;
 		});
 	};

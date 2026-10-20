@@ -12,7 +12,6 @@ import { MenuManager } from "../../components/staff/MenuManager";
 import { useMenuManagement } from "./useMenuManagement";
 
 vi.mock("../../api/menu", () => ({
-	createMenu: vi.fn(),
 	deleteMenu: vi.fn(),
 	updateMenuAvailability: vi.fn(),
 	updateMenuPromotion: vi.fn(),

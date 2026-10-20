@@ -10,7 +10,7 @@ export function MenuCard({
 	menu: Menu;
 	inCart: CartItem | undefined;
 	addToCart: (menu: Menu) => void;
-	updateCartQty: (id: number, delta: number) => void;
+	updateCartQty: (itemKey: string | number, delta: number) => void;
 }) {
 	const visual = getDrinkVisual(menu.name);
 	const isFeatured = !!menu.is_featured;
@@ -54,7 +54,7 @@ export function MenuCard({
 						<div className="club-quantity">
 							<button
 								type="button"
-								onClick={() => updateCartQty(menu.id, -1)}
+								onClick={() => updateCartQty(inCart.key ?? menu.id, -1)}
 								aria-label={`${menu.name}を1点減らす`}
 							>
 								<Minus size={16} />
@@ -62,7 +62,7 @@ export function MenuCard({
 							<span>{inCart.quantity}</span>
 							<button
 								type="button"
-								onClick={() => updateCartQty(menu.id, 1)}
+								onClick={() => updateCartQty(inCart.key ?? menu.id, 1)}
 								aria-label={`${menu.name}を1点増やす`}
 							>
 								<Plus size={16} />

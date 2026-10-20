@@ -27,20 +27,21 @@ import (
 	"gorm.io/gorm"
 )
 
-func Run(db *gorm.DB) error {
+// NewRouter wires the real handlers, usecases and repositories without opening a listener.
+func NewRouter(db *gorm.DB) (*gin.Engine, error) {
 	accessSecret := os.Getenv("ORDER_ACCESS_SECRET")
 	if accessSecret == "" {
-		return errors.New("ORDER_ACCESS_SECRET must be set")
+		return nil, errors.New("ORDER_ACCESS_SECRET must be set")
 	}
 
 	secret := os.Getenv("JWT_SECRET")
 	if err := config.ValidateJWTSecret(secret); err != nil {
-		return err
+		return nil, err
 	}
 	adminUsername := os.Getenv("ADMIN_USERNAME")
 
 	if adminUsername == "" {
-		return errors.New("ADMIN_USERNAME must be set")
+		return nil, errors.New("ADMIN_USERNAME must be set")
 	}
 
 	auth := middleware.NewAuthMiddleware(db, secret, adminUsername)
@@ -59,7 +60,7 @@ func Run(db *gorm.DB) error {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: allowedOrigins,
 		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders: []string{"Origin", "Content-Type", "X-Order-Session", "Authorization"},
+		AllowHeaders: []string{"Origin", "Content-Type", "X-Order-Session", "X-Order-Receipt", "Authorization"},
 	}))
 
 	sessionRepo := orderSessionDB.NewOrderSessionRepository(db)
@@ -68,14 +69,6 @@ func Run(db *gorm.DB) error {
 		sessionRepo,
 		accessSecret,
 	)
-
-	go func() {
-		ticker := time.NewTicker(10 * time.Minute)
-
-		for range ticker.C {
-			accessUC.DeleteExpiredSessions()
-		}
-	}()
 
 	accessHandler := orderAccessHandler.NewHandler(accessUC)
 
@@ -102,7 +95,9 @@ func Run(db *gorm.DB) error {
 	orderGroup := r.Group("/api/orders")
 	{
 		orderGroup.POST("", accessHandler.RequireOrderSession, orderHandler.CreateOrder)
-		orderGroup.GET("", orderHandler.GetOrders)
+		orderGroup.GET("", auth.RequireAdmin, orderHandler.GetOrders)
+		orderGroup.GET("/public", orderHandler.GetPublicOrders)
+		orderGroup.GET("/:id/receipt", orderHandler.GetReceipt)
 		orderGroup.PUT("/:id/status", auth.RequireAdmin, orderHandler.UpdateOrderStatus)
 	}
 
@@ -112,5 +107,27 @@ func Run(db *gorm.DB) error {
 		accessGroup.POST("/session", accessHandler.CreateSession)
 	}
 	r.POST("/api/login", loginHandler.Login)
+	return r, nil
+}
+
+func Run(db *gorm.DB) error {
+	r, err := NewRouter(db)
+	if err != nil {
+		return err
+	}
+	ticker := time.NewTicker(10 * time.Minute)
+	defer ticker.Stop()
+	done := make(chan struct{})
+	defer close(done)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				_ = orderSessionDB.NewOrderSessionRepository(db).DeleteExpired()
+			case <-done:
+				return
+			}
+		}
+	}()
 	return r.Run(":8080")
 }

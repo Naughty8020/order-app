@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { LoaderCircle, LogIn, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { isCurrentToken } from "../api/auth";
 import { createSession } from "../api/login";
 import { CustomerBackground } from "../components/customer/CustomerBackground";
@@ -11,6 +11,8 @@ export const Route = createFileRoute("/login")({
 
 function RouteComponent() {
 	const navigate = useNavigate();
+	const [hydrated, setHydrated] = useState(false);
+	useEffect(() => setHydrated(true), []);
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -72,6 +74,7 @@ function RouteComponent() {
 						</p>
 					</div>
 					<form
+						method="post"
 						onSubmit={(event) => {
 							event.preventDefault();
 							void handleLogin();
@@ -91,7 +94,7 @@ function RouteComponent() {
 								name="username"
 								autoComplete="username"
 								required
-								disabled={loading}
+								disabled={!hydrated || loading}
 								aria-describedby={error ? "login-error" : undefined}
 								className="w-full rounded-xl border border-white/10 bg-[#0a0a12] px-4 py-3 text-base text-white placeholder:text-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 transition"
 								type="text"
@@ -113,7 +116,7 @@ function RouteComponent() {
 								name="password"
 								autoComplete="current-password"
 								required
-								disabled={loading}
+								disabled={!hydrated || loading}
 								aria-describedby={error ? "login-error" : undefined}
 								className="w-full rounded-xl border border-white/10 bg-[#0a0a12] px-4 py-3 text-base text-white placeholder:text-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60 transition"
 								type="password"
@@ -134,7 +137,7 @@ function RouteComponent() {
 						)}
 						<button
 							type="submit"
-							disabled={loading}
+							disabled={!hydrated || loading}
 							className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 px-5 py-3.5 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(16,185,129,0.35)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-400 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none cursor-pointer"
 						>
 							{loading ? (

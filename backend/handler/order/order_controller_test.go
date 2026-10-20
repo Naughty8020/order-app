@@ -15,9 +15,19 @@ import (
 )
 
 type orderUsecaseMock struct {
+	getPublicOrdersFn   func() ([]models.PublicOrder, error)
+	getReceiptFn        func(uint, string) (*models.Order, error)
 	createOrderFn       func(items []orderUsecase.CreateOrderItemInput) (*models.Order, error)
 	getOrdersFn         func() ([]models.Order, error)
 	updateOrderStatusFn func(id uint, status string) (*models.Order, error)
+}
+
+func (m *orderUsecaseMock) GetPublicOrders() ([]models.PublicOrder, error) {
+	return m.getPublicOrdersFn()
+}
+
+func (m *orderUsecaseMock) GetReceipt(id uint, token string) (*models.Order, error) {
+	return m.getReceiptFn(id, token)
 }
 
 func (m *orderUsecaseMock) CreateOrder(items []orderUsecase.CreateOrderItemInput) (*models.Order, error) {
@@ -35,7 +45,7 @@ func (m *orderUsecaseMock) UpdateOrderStatus(id uint, status string) (*models.Or
 func TestCreateOrderHandler(t *testing.T) {
 	usecase := &orderUsecaseMock{
 		createOrderFn: func(items []orderUsecase.CreateOrderItemInput) (*models.Order, error) {
-			if len(items) != 2 || items[0].MenuID != 1 || items[0].Quantity != 2 || items[1].MenuID != 2 || items[1].Quantity != 1 {
+			if len(items) != 2 || items[0].MenuID != 7 || items[0].Quantity != 2 || items[0].Option != "ジュース：オレンジジュース" || items[1].MenuID != 2 || items[1].Quantity != 1 {
 				t.Errorf("CreateOrder() items = %+v", items)
 			}
 			return &models.Order{
@@ -52,7 +62,7 @@ func TestCreateOrderHandler(t *testing.T) {
 		NewOrderHandler(usecase),
 		http.MethodPost,
 		"/api/orders",
-		`{"items":[{"menu_id":1,"quantity":2},{"menu_id":2,"quantity":1}]}`,
+		`{"items":[{"menu_id":7,"quantity":2,"option":"ジュース：オレンジジュース"},{"menu_id":2,"quantity":1}]}`,
 	)
 
 	if recorder.Code != http.StatusCreated {
@@ -103,6 +113,19 @@ func TestCreateOrderHandlerReturnsInternalServerError(t *testing.T) {
 
 	if recorder.Code != http.StatusInternalServerError {
 		t.Errorf("status = %d, want %d", recorder.Code, http.StatusInternalServerError)
+	}
+}
+
+func TestCreateOrderHandlerRejectsInvalidOption(t *testing.T) {
+	usecase := &orderUsecaseMock{
+		createOrderFn: func(items []orderUsecase.CreateOrderItemInput) (*models.Order, error) {
+			return nil, orderUsecase.ErrInvalidOrderOption
+		},
+	}
+	recorder := performOrderRequest(NewOrderHandler(usecase), http.MethodPost, "/api/orders", `{"items":[{"menu_id":7,"quantity":1,"option":"指定外"}]}`)
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", recorder.Code, http.StatusBadRequest)
 	}
 }
 

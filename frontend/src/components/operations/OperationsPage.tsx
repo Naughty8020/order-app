@@ -47,7 +47,7 @@ export function OperationsPage({
 		}
 		setMode(next);
 	};
-	const customer = useCustomerOrder(mode === "monitor");
+	const customer = useCustomerOrder(mode);
 	const qr = useOrderQR(customer.showToast);
 	const menuManagement = useMenuManagement(
 		customer.refreshMenus,

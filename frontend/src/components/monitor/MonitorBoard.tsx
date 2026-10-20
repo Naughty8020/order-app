@@ -53,11 +53,6 @@ export function MonitorBoard({
 							</a>
 						)}
 					</div>
-					<div className="shrink-0 text-center pt-4">
-						<p className="font-serif text-sky-100/70 font-bold text-lg tracking-[0.16em]">
-							&gt;&gt;&gt; SCAN QR TO ORDER &lt;&lt;&lt;
-						</p>
-					</div>
 				</div>
 			</div>
 
@@ -93,13 +88,6 @@ export function MonitorBoard({
 								))
 							)}
 						</div>
-						{preparingOrders.length > 0 && (
-							<div className="mt-auto text-center pt-4">
-								<p className="font-serif text-sky-100/70 font-bold text-lg tracking-[0.16em]">
-									&gt;&gt;&gt; YOUR ORDER IS BEING PREPARED &lt;&lt;&lt;
-								</p>
-							</div>
-						)}
 					</div>
 
 					{/* カラム2: READY TO PICK UP */}
@@ -127,14 +115,6 @@ export function MonitorBoard({
 								))
 							)}
 						</div>
-
-						{readyOrders.length > 0 && (
-							<div className="mt-auto text-center pt-4">
-								<p className="font-serif text-sky-100/70 font-bold text-lg tracking-[0.16em]">
-									&gt;&gt;&gt; PLEASE COME TO THE COUNTER &lt;&lt;&lt;
-								</p>
-							</div>
-						)}
 					</div>
 				</div>
 			</div>
