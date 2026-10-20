@@ -480,14 +480,14 @@ a {
 .club-categories button[aria-pressed='true'] { border-color:#f358d9; background:linear-gradient(110deg,#84219877,#db268b44); box-shadow:0 0 14px #ff4ad52b,inset 0 0 12px #ef52e31c; font-weight:700; }
 .club-categories button[aria-pressed='true']::after { content:''; position:absolute; bottom:-3px; left:20%; right:20%; height:3px; border-radius:4px; background:#f28af8; box-shadow:0 0 10px #f16bea; }
 .club-menu-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-.club-card { position:relative; overflow:hidden; min-width:0; border:1px solid #69608466; border-radius:16px; background:#1a182e; box-shadow:inset 0 0 1px #fff4; }
+.club-card { position:relative; display:flex; flex-direction:column; overflow:hidden; min-width:0; border:1px solid #69608466; border-radius:16px; background:#1a182e; box-shadow:inset 0 0 1px #fff4; }
 .club-card-featured { border-color:#ff4bab; box-shadow:0 0 16px #ec289533; }
 .club-drink-photo,.club-drink-placeholder { width:100%; aspect-ratio:1.42; object-fit:cover; display:block; }
 .club-drink-placeholder { display:flex; align-items:center; justify-content:center; background:radial-gradient(ellipse,#913593,#201830); color:#ffb9ed; }
-.club-card-content { position:relative; margin-top:-28px; padding:16px 12px 10px; background:linear-gradient(0deg,#1c192e 65%,#1c192ee8 85%,#1c192e00); }
+.club-card-content { position:relative; display:flex; flex:1; flex-direction:column; margin-top:-28px; padding:16px 12px 10px; background:linear-gradient(0deg,#1c192e 65%,#1c192ee8 85%,#1c192e00); }
 .club-card h3 { color:white; font-size:clamp(13px,2.5vw,23px); line-height:1.4; font-weight:800; margin:0 0 4px; overflow-wrap:anywhere; }
 .club-drink-description { white-space:pre-line; color:#e0dce7; font-size:clamp(10px,1.8vw,16px); line-height:1.45; min-height:2.9em; margin-bottom:10px; }
-.club-card-bottom { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:5px; }
+.club-card-bottom { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:5px; margin-top:auto; }
 .club-price { font-size:clamp(20px,3.5vw,30px); font-weight:800; color:#f560bf; line-height:1; }
 .club-add,.club-quantity { display:flex; align-items:center; justify-content:center; gap:6px; min-height:36px; border:1px solid #ec57db; border-radius:12px; background:linear-gradient(110deg,#652368aa,#6c235faa); color:white; font-size:13px; font-weight:700; }
 .club-add { padding:6px 12px; cursor:pointer; }
