@@ -31,9 +31,14 @@ export function OrderCard({ order }: { order: Order }) {
 				<ul className="space-y-2">
 					{order.order_items.map((item) => (
 						<li key={item.id} className="flex justify-between gap-3">
-							<span>
-								{item.name || item.menu?.name || "商品"} × {item.quantity}
-							</span>
+							<div>
+								<span>
+									{item.name || item.menu?.name || "商品"} × {item.quantity}
+								</span>
+								{item.option && (
+									<p className="text-xs text-pink-300">{item.option}</p>
+								)}
+							</div>
 							<span className="whitespace-nowrap">
 								¥{(item.price * item.quantity).toLocaleString()}
 							</span>

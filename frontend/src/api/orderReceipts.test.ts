@@ -14,6 +14,7 @@ const order: Order = {
 			order_id: 7,
 			menu_id: 1,
 			name: "お茶",
+			option: "",
 			menu: { id: 1, name: "お茶", price: 200, is_available: true },
 			price: 200,
 			quantity: 2,

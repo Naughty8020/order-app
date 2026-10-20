@@ -28,6 +28,7 @@ export interface OrderItem {
 	menu: Menu;
 	quantity: number;
 	price: number;
+	option: string;
 }
 
 export interface Order {
@@ -38,7 +39,7 @@ export interface Order {
 }
 
 export interface CreateOrderRequest {
-	items: { menu_id: number; quantity: number }[];
+	items: { menu_id: number; quantity: number; option?: string }[];
 }
 
 export type CreateOrderResult =

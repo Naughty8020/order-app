@@ -38,7 +38,7 @@ func (m *orderRepositoryMock) Save(order *models.Order) error { return m.saveFn(
 
 func TestCreateOrder(t *testing.T) {
 	menus := map[uint]*models.Menu{
-		1: {ID: 1, Price: 200, IsAvailable: true},
+		7: {ID: 7, Price: 300, IsAvailable: true},
 		2: {ID: 2, Price: 300, IsAvailable: true},
 	}
 	var createdItems []models.OrderItem
@@ -62,7 +62,7 @@ func TestCreateOrder(t *testing.T) {
 	usecase := NewOrderUsecase(repo)
 
 	got, err := usecase.CreateOrder([]CreateOrderItemInput{
-		{MenuID: 1, Quantity: 2},
+		{MenuID: 7, Quantity: 2, Option: "ジュース：オレンジジュース"},
 		{MenuID: 2, Quantity: 1},
 	})
 
@@ -75,7 +75,7 @@ func TestCreateOrder(t *testing.T) {
 	if len(createdItems) != 2 {
 		t.Fatalf("created items = %d, want 2", len(createdItems))
 	}
-	if createdItems[0].OrderID != 10 || createdItems[0].MenuID != 1 || createdItems[0].Quantity != 2 || createdItems[0].Price != 200 {
+	if createdItems[0].OrderID != 10 || createdItems[0].MenuID != 7 || createdItems[0].Quantity != 2 || createdItems[0].Price != 300 || createdItems[0].Option != "ジュース：オレンジジュース" {
 		t.Errorf("first item = %+v", createdItems[0])
 	}
 	if createdItems[1].OrderID != 10 || createdItems[1].MenuID != 2 || createdItems[1].Quantity != 1 || createdItems[1].Price != 300 {
@@ -98,8 +98,9 @@ func TestCreateOrderRejectsEmptyItems(t *testing.T) {
 
 func TestCreateOrderRejectsUnavailableMenu(t *testing.T) {
 	itemCreated := false
+	orderCreated := false
 	repo := &orderRepositoryMock{
-		createOrderFn: func(order *models.Order) error { order.ID = 1; return nil },
+		createOrderFn: func(order *models.Order) error { orderCreated = true; return nil },
 		findMenuByIDFn: func(id uint) (*models.Menu, error) {
 			return &models.Menu{ID: id, IsAvailable: false}, nil
 		},
@@ -121,6 +122,46 @@ func TestCreateOrderRejectsUnavailableMenu(t *testing.T) {
 	if itemCreated {
 		t.Error("CreateOrderItem() was called")
 	}
+	if orderCreated {
+		t.Error("CreateOrder() was called")
+	}
+}
+
+func TestCreateOrderValidatesOptionsBeforeCreatingOrder(t *testing.T) {
+	tests := []struct {
+		name   string
+		menuID uint
+		option string
+	}{
+		{name: "必須選択なし", menuID: 7},
+		{name: "指定外のジュース", menuID: 8, option: "ジュース：リンゴジュース"},
+		{name: "固定レシピにオプション", menuID: 9, option: "追加あり"},
+		{name: "指定外のトッピング", menuID: 10, option: "コーラ垂らし：多め"},
+		{name: "ソフトドリンクにオプション", menuID: 1, option: "氷なし"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			orderCreated := false
+			usecase := NewOrderUsecase(&orderRepositoryMock{
+				findMenuByIDFn: func(id uint) (*models.Menu, error) {
+					return &models.Menu{ID: id, IsAvailable: true}, nil
+				},
+				createOrderFn: func(order *models.Order) error {
+					orderCreated = true
+					return nil
+				},
+			})
+
+			got, err := usecase.CreateOrder([]CreateOrderItemInput{{MenuID: tt.menuID, Quantity: 1, Option: tt.option}})
+			if got != nil || !errors.Is(err, ErrInvalidOrderOption) {
+				t.Fatalf("order = %+v, error = %v", got, err)
+			}
+			if orderCreated {
+				t.Error("CreateOrder() was called")
+			}
+		})
+	}
 }
 
 func TestCreateOrderReturnsRepositoryErrors(t *testing.T) {
@@ -131,6 +172,9 @@ func TestCreateOrderReturnsRepositoryErrors(t *testing.T) {
 		{
 			name: "注文保存エラー",
 			repo: &orderRepositoryMock{
+				findMenuByIDFn: func(id uint) (*models.Menu, error) {
+					return &models.Menu{ID: id, IsAvailable: true}, nil
+				},
 				createOrderFn: func(order *models.Order) error { return errors.New("create failed") },
 			},
 		},

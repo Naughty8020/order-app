@@ -5,8 +5,8 @@ interface Props {
 	cart: Cart;
 	isCartOpen: boolean;
 	setIsCartOpen: (open: boolean) => void;
-	updateCartQty: (menuId: number, delta: number) => void;
-	removeFromCart: (menuId: number) => void;
+	updateCartQty: (itemKey: string | number, delta: number) => void;
+	removeFromCart: (itemKey: string | number) => void;
 	submitOrder: () => Promise<void>;
 	loading: boolean;
 	orderAccessStatus: OrderAccessStatus;
@@ -134,7 +134,7 @@ export function CartTray({
 								<div className="space-y-3 overflow-y-auto pr-1 flex-grow mb-5 custom-scrollbar">
 									{Object.values(cart).map((item) => (
 										<div
-											key={item.menu.id}
+											key={item.key ?? item.menu.id}
 											className="club-tray-item rounded-[16px] p-3 flex flex-wrap gap-3 justify-between items-center"
 										>
 											<div className="min-w-0 flex-1 basis-24">
@@ -144,12 +144,19 @@ export function CartTray({
 												<p className="text-[13px] font-bold text-[#f560bf]">
 													¥{item.menu.price.toLocaleString()}
 												</p>
+												{item.option && (
+													<p className="text-[11px] text-zinc-400 leading-relaxed">
+														{item.option}
+													</p>
+												)}
 											</div>
 											<div className="flex items-center gap-2">
 												<div className="club-quantity">
 													<button
 														type="button"
-														onClick={() => updateCartQty(item.menu.id, -1)}
+														onClick={() =>
+															updateCartQty(item.key ?? item.menu.id, -1)
+														}
 														aria-label={`${item.menu.name}を1点減らす`}
 														className="rounded-xl hover:bg-white/10 transition-colors"
 													>
@@ -160,7 +167,9 @@ export function CartTray({
 													</span>
 													<button
 														type="button"
-														onClick={() => updateCartQty(item.menu.id, 1)}
+														onClick={() =>
+															updateCartQty(item.key ?? item.menu.id, 1)
+														}
 														aria-label={`${item.menu.name}を1点増やす`}
 														className="rounded-xl hover:bg-white/10 transition-colors"
 													>
@@ -169,7 +178,9 @@ export function CartTray({
 												</div>
 												<button
 													type="button"
-													onClick={() => removeFromCart(item.menu.id)}
+													onClick={() =>
+														removeFromCart(item.key ?? item.menu.id)
+													}
 													aria-label={`${item.menu.name}をカートから削除`}
 													className="club-tray-icon flex rounded-xl"
 												>

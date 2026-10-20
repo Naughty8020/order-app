@@ -1,4 +1,26 @@
+const cocktails = [
+	{
+		name: "シャーリー・テンプル風",
+		description: "ノンアルコール。\nコーラの甘さに、フルーツの爽やかな酸味。",
+	},
+	{
+		name: "フルーツ・サイダーポンチ",
+		description:
+			"ノンアルコール。\nサイダーとフルーツジュースの華やかな味わい。",
+	},
+	{
+		name: "オレンジ・グレープ・フィズ",
+		description: "ノンアルコール。\nオレンジとグレープのフルーティーな炭酸。",
+	},
+	{
+		name: "サンライズ風モクテル",
+		description: "ノンアルコール。\n朝焼けのような2層の色合いを楽しむ一杯。",
+	},
+];
+
 export function getDrinkVisual(name: string) {
+	const cocktail = cocktails.find((drink) => name.startsWith(drink.name));
+	if (cocktail) return { image: null, description: cocktail.description };
 	if (/コーラ|cola/i.test(name))
 		return {
 			image: "cola",
@@ -33,7 +55,10 @@ export function getDrinkVisual(name: string) {
 }
 export const isRecommendedDrink = (name: string) =>
 	/オレンジジュース|orange juice/i.test(name);
+export const isMocktailDrink = (name: string) =>
+	cocktails.some((drink) => name.startsWith(drink.name));
 export const isCocktailDrink = (name: string) =>
+	isMocktailDrink(name) ||
 	/カクテル|cocktail|モヒート|mojito|ジントニック|gin tonic|カシス|ウォッカ|vodka|ラムコーク|ハイボール|highball/i.test(
 		name,
 	);

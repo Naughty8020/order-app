@@ -54,6 +54,10 @@ func SeedMenus(db *gorm.DB) {
 		{ID: 4, Name: "三ツ矢サイダー (Mitsuya Cider)", Price: 200, IsAvailable: true},
 		{ID: 5, Name: "アップルジュース (Apple Juice)", Price: 200, IsAvailable: true},
 		{ID: 6, Name: "オレンジジュース (Orange Juice)", Price: 200, IsAvailable: true},
+		{ID: 7, Name: "シャーリー・テンプル風", Price: 300, IsAvailable: true},
+		{ID: 8, Name: "フルーツ・サイダーポンチ", Price: 300, IsAvailable: true},
+		{ID: 9, Name: "オレンジ・グレープ・フィズ", Price: 300, IsAvailable: true},
+		{ID: 10, Name: "サンライズ風モクテル", Price: 300, IsAvailable: true},
 	}
 
 	log.Println("シードデータの投入を開始します...")

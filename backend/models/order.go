@@ -25,4 +25,5 @@ type OrderItem struct {
 	Menu     Menu   `gorm:"foreignKey:MenuID" json:"menu"`
 	Quantity int    `gorm:"not null;default:1" json:"quantity"`
 	Price    int    `gorm:"not null" json:"price"`
+	Option   string `gorm:"type:varchar(100);not null;default:''" json:"option"`
 }
