@@ -9,19 +9,6 @@ export async function getMenus(): Promise<Menu[]> {
 	return data.data || [];
 }
 
-export async function createMenu(menu: Omit<Menu, "id">): Promise<void> {
-	const response = await authenticatedFetch(
-		`${getApiBase()}/menus`,
-		{
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(menu),
-		},
-		true,
-	);
-	if (!response.ok) throw new Error("メニューの作成に失敗しました");
-}
-
 export async function updateMenuAvailability(
 	id: number,
 	isAvailable: boolean,

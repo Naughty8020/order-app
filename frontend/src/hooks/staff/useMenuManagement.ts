@@ -1,6 +1,5 @@
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
 import {
-	createMenu,
 	deleteMenu,
 	updateMenuAvailability,
 	updateMenuPromotion,
@@ -11,34 +10,6 @@ export function useMenuManagement(
 	refreshMenus: () => Promise<void>,
 	showToast: ShowToast,
 ) {
-	const [newMenuName, setNewMenuName] = useState("");
-	const [newMenuPrice, setNewMenuPrice] = useState("");
-	const [submittingMenu, setSubmittingMenu] = useState(false);
-	// Staff: Add Menu
-	const handleAddMenu = async (e: FormEvent) => {
-		e.preventDefault();
-		if (!newMenuName || !newMenuPrice) return;
-		setSubmittingMenu(true);
-		try {
-			const price = parseInt(newMenuPrice, 10);
-			if (Number.isNaN(price) || price <= 0)
-				throw new Error("価格は正の数値で入力してください");
-
-			await createMenu({ name: newMenuName, price, is_available: true });
-
-			showToast(`${newMenuName} を追加しました`);
-			setNewMenuName("");
-			setNewMenuPrice("");
-
-			// Refresh menus
-			await refreshMenus();
-		} catch (err: unknown) {
-			showToast(err instanceof Error ? err.message : String(err), "error");
-		} finally {
-			setSubmittingMenu(false);
-		}
-	};
-
 	// Staff: Toggle Availability
 	const handleToggleAvailable = async (menu: Menu) => {
 		try {
@@ -90,12 +61,6 @@ export function useMenuManagement(
 	};
 
 	return {
-		newMenuName,
-		setNewMenuName,
-		newMenuPrice,
-		setNewMenuPrice,
-		submittingMenu,
-		handleAddMenu,
 		handleToggleAvailable,
 		handleDeleteMenu,
 		handleTogglePromotion,
