@@ -9,6 +9,7 @@ import (
 	"order-system/models"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestOrderReadsUnit(t *testing.T) {
@@ -146,7 +147,7 @@ func TestOrderWritesUnit(t *testing.T) {
 		args      []driver.Value
 		run       func(*testing.T, *OrderRepository) error
 	}{
-		{"注文作成", "INSERT INTO `orders` (`status`,`created_at`) VALUES (?,?)", []driver.Value{"pending", testsql.Now()}, func(t *testing.T, r *OrderRepository) error {
+		{"注文作成", "INSERT INTO `orders` (`receipt_token_hash`,`receipt_expires_at`,`status`,`created_at`) VALUES (?,?,?,?)", []driver.Value{"", time.Time{}, "pending", testsql.Now()}, func(t *testing.T, r *OrderRepository) error {
 			order := models.Order{Status: "pending"}
 			err := r.CreateOrder(&order)
 			if err == nil && (order.ID != 7 || !order.CreatedAt.Equal(testsql.Now())) {
@@ -154,7 +155,7 @@ func TestOrderWritesUnit(t *testing.T) {
 			}
 			return err
 		}},
-		{"注文明細作成", "INSERT INTO `order_items` (`order_id`,`menu_id`,`quantity`,`price`) VALUES (?,?,?,?)", []driver.Value{7, 3, 2, 200}, func(t *testing.T, r *OrderRepository) error {
+		{"注文明細作成", "INSERT INTO `order_items` (`name`,`order_id`,`menu_id`,`quantity`,`price`) VALUES (?,?,?,?,?)", []driver.Value{"", 7, 3, 2, 200}, func(t *testing.T, r *OrderRepository) error {
 			item := models.OrderItem{OrderID: 7, MenuID: 3, Quantity: 2, Price: 200}
 			err := r.CreateOrderItem(&item)
 			if err == nil && item.ID != 7 {
@@ -162,7 +163,7 @@ func TestOrderWritesUnit(t *testing.T) {
 			}
 			return err
 		}},
-		{"ステータス保存", "UPDATE `orders` SET `status`=?,`created_at`=? WHERE `id` = ?", []driver.Value{"ready", testsql.Now(), 7}, func(t *testing.T, r *OrderRepository) error {
+		{"ステータス保存", "UPDATE `orders` SET `receipt_token_hash`=?,`receipt_expires_at`=?,`status`=?,`created_at`=? WHERE `id` = ?", []driver.Value{"", time.Time{}, "ready", testsql.Now(), 7}, func(t *testing.T, r *OrderRepository) error {
 			return r.Save(&models.Order{ID: 7, Status: "ready", CreatedAt: testsql.Now()})
 		}},
 	} {

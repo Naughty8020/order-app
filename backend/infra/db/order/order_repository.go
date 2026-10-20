@@ -1,6 +1,8 @@
 package order
 
 import (
+	"errors"
+	"order-system/domain/repository"
 	"order-system/models"
 
 	"gorm.io/gorm"
@@ -36,6 +38,9 @@ func (r *OrderRepository) FindByID(id uint) (*models.Order, error) {
 		Preload("OrderItems.Menu").
 		First(&order, id).
 		Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.Join(repository.ErrNotFound, err)
+		}
 		return nil, err
 	}
 

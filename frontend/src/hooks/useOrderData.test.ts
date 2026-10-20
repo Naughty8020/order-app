@@ -2,11 +2,34 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { useOrderData } from "./useOrderData";
+import type { Order } from "../api/order";
 
 afterEach(() => {
 	cleanup();
 	vi.useRealTimers();
 	vi.unstubAllGlobals();
+});
+
+it("hides staff orders immediately and ignores late responses after switching to customer history", async () => {
+	const staffResponse = deferred<Order[]>();
+	const staff = vi.fn(() => staffResponse.promise);
+	const customer = vi.fn(async () => []);
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async () => Response.json({ data: [] })),
+	);
+	const { result, rerender } = renderHook(
+		({ loader }) => useOrderData(undefined, loader),
+		{ initialProps: { loader: staff as () => Promise<Order[]> } },
+	);
+	rerender({ loader: customer });
+	expect(result.current.orders).toEqual([]);
+	await act(async () => {
+		staffResponse.resolve([
+			{ id: 999, status: "pending", created_at: "", order_items: [] },
+		]);
+	});
+	expect(result.current.orders).toEqual([]);
 });
 
 it("polls every four seconds, announces only newly ready orders, and stops on unmount", async () => {
