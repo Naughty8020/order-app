@@ -34,12 +34,24 @@ func (m *orderRepositoryMock) CreateOrder(order *models.Order) error {
 func (m *orderRepositoryMock) CreateOrderItem(item *models.OrderItem) error {
 	return m.createOrderItemFn(item)
 }
+func (m *orderRepositoryMock) CreateOrderWithItems(order *models.Order, items []models.OrderItem) error {
+	if err := m.createOrderFn(order); err != nil {
+		return err
+	}
+	for index := range items {
+		items[index].OrderID = order.ID
+		if err := m.createOrderItemFn(&items[index]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 func (m *orderRepositoryMock) Save(order *models.Order) error { return m.saveFn(order) }
 
 func TestCreateOrder(t *testing.T) {
 	menus := map[uint]*models.Menu{
-		7: {ID: 7, Price: 300, IsAvailable: true},
-		2: {ID: 2, Price: 300, IsAvailable: true},
+		27: {ID: 27, Name: "シャーリー・テンプル風", Price: 300, IsAvailable: true},
+		2:  {ID: 2, Name: "既存商品", Price: 300, IsAvailable: true},
 	}
 	var createdItems []models.OrderItem
 	repo := &orderRepositoryMock{
@@ -55,14 +67,11 @@ func TestCreateOrder(t *testing.T) {
 			createdItems = append(createdItems, *item)
 			return nil
 		},
-		findByIDFn: func(id uint) (*models.Order, error) {
-			return &models.Order{ID: id, Status: "pending", OrderItems: createdItems}, nil
-		},
 	}
 	usecase := NewOrderUsecase(repo)
 
 	got, err := usecase.CreateOrder([]CreateOrderItemInput{
-		{MenuID: 7, Quantity: 2, Option: "ジュース：オレンジジュース"},
+		{MenuID: 27, Quantity: 2, Option: "ジュース：オレンジジュース"},
 		{MenuID: 2, Quantity: 1},
 	})
 
@@ -72,10 +81,13 @@ func TestCreateOrder(t *testing.T) {
 	if got.ID != 10 || got.Status != "pending" {
 		t.Errorf("CreateOrder() = %+v", got)
 	}
+	if len(got.OrderItems) != 2 || got.OrderItems[0].Menu.Name != "シャーリー・テンプル風" {
+		t.Errorf("returned items = %+v", got.OrderItems)
+	}
 	if len(createdItems) != 2 {
 		t.Fatalf("created items = %d, want 2", len(createdItems))
 	}
-	if createdItems[0].OrderID != 10 || createdItems[0].MenuID != 7 || createdItems[0].Quantity != 2 || createdItems[0].Price != 300 || createdItems[0].Option != "ジュース：オレンジジュース" {
+	if createdItems[0].OrderID != 10 || createdItems[0].MenuID != 27 || createdItems[0].Quantity != 2 || createdItems[0].Price != 300 || createdItems[0].Option != "ジュース：オレンジジュース" {
 		t.Errorf("first item = %+v", createdItems[0])
 	}
 	if createdItems[1].OrderID != 10 || createdItems[1].MenuID != 2 || createdItems[1].Quantity != 1 || createdItems[1].Price != 300 {
@@ -129,15 +141,14 @@ func TestCreateOrderRejectsUnavailableMenu(t *testing.T) {
 
 func TestCreateOrderValidatesOptionsBeforeCreatingOrder(t *testing.T) {
 	tests := []struct {
-		name   string
-		menuID uint
-		option string
+		name, menuName, option string
+		menuID                 uint
 	}{
-		{name: "必須選択なし", menuID: 7},
-		{name: "指定外のジュース", menuID: 8, option: "ジュース：リンゴジュース"},
-		{name: "固定レシピにオプション", menuID: 9, option: "追加あり"},
-		{name: "指定外のトッピング", menuID: 10, option: "コーラ垂らし：多め"},
-		{name: "ソフトドリンクにオプション", menuID: 1, option: "氷なし"},
+		{name: "必須選択なし", menuID: 42, menuName: "シャーリー・テンプル風"},
+		{name: "指定外のジュース", menuID: 43, menuName: "フルーツ・サイダーポンチ", option: "ジュース：リンゴジュース"},
+		{name: "固定レシピにオプション", menuID: 44, menuName: "オレンジ・グレープ・フィズ", option: "追加あり"},
+		{name: "指定外のトッピング", menuID: 45, menuName: "サンライズ風モクテル", option: "コーラ垂らし：多め"},
+		{name: "旧ID 7の商品をモクテル扱いしない", menuID: 7, menuName: "既存商品", option: "ジュース：オレンジジュース"},
 	}
 
 	for _, tt := range tests {
@@ -145,7 +156,7 @@ func TestCreateOrderValidatesOptionsBeforeCreatingOrder(t *testing.T) {
 			orderCreated := false
 			usecase := NewOrderUsecase(&orderRepositoryMock{
 				findMenuByIDFn: func(id uint) (*models.Menu, error) {
-					return &models.Menu{ID: id, IsAvailable: true}, nil
+					return &models.Menu{ID: id, Name: tt.menuName, IsAvailable: true}, nil
 				},
 				createOrderFn: func(order *models.Order) error {
 					orderCreated = true
@@ -281,6 +292,27 @@ func TestUpdateOrderStatusReturnsRepositoryError(t *testing.T) {
 
 	if got != nil || !errors.Is(err, wantErr) {
 		t.Errorf("order = %+v, error = %v", got, err)
+	}
+}
+
+func TestUpdateOrderStatusRejectsChangesAfterCompletion(t *testing.T) {
+	saveCalls := 0
+	repo := &orderRepositoryMock{
+		findByIDFn: func(id uint) (*models.Order, error) {
+			return &models.Order{ID: id, Status: "completed"}, nil
+		},
+		saveFn: func(*models.Order) error {
+			saveCalls++
+			return nil
+		},
+	}
+
+	got, err := NewOrderUsecase(repo).UpdateOrderStatus(7, "ready")
+	if got != nil || !errors.Is(err, ErrCompletedOrderImmutable) {
+		t.Fatalf("order = %+v, error = %v", got, err)
+	}
+	if saveCalls != 0 {
+		t.Errorf("Save calls = %d, want 0", saveCalls)
 	}
 }
 

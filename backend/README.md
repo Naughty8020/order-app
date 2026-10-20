@@ -99,7 +99,7 @@ APIの公開範囲が変わるため、バックエンドとフロントエン�
 
 ## 注文状態
 
-注文状態は `pending`（準備中）、`ready`（呼び出し中）、`completed`（受け渡し完了）の3種類です。新規注文は `pending` で作成し、スタッフ画面から `ready`、`completed` に更新します。状態更新APIは `preparing` を含む上記以外の値をHTTP 400で拒否し、保存しません。
+注文状態は `pending`（準備中）、`ready`（呼び出し中）、`completed`（受け渡し完了）の3種類です。新規注文は `pending` で作成し、スタッフ画面から `ready`、`completed` に更新します。状態更新APIは `preparing` を含む上記以外の値をHTTP 400で拒否し、`completed` になった注文を別の状態へ戻す操作をHTTP 409で拒否します。
 
 ## 結合テスト・E2Eテスト
 

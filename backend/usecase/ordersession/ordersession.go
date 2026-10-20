@@ -17,6 +17,7 @@ type OrderAccessUsecase interface {
 	CurrentQRToken() (string, time.Time)
 	ExchangeQRToken(qrToken string) (string, time.Time, error)
 	ConsumeOrder(sessionToken string) error
+	RefundOrder(sessionToken string) error
 	DeleteExpiredSessions() error
 }
 
@@ -99,42 +100,47 @@ func (u *orderAccessUsecase) ConsumeOrder(
 ) error {
 
 	now := u.now()
-
 	tokenHash := hashToken(sessionToken)
+	err := u.repo.UpdateWithLock(tokenHash, func(session *models.OrderSession) (bool, error) {
+		// Session期限切れ
+		if !now.Before(session.ExpiresAt) {
+			return false, ErrInvalidSession
+		}
 
-	session, err := u.repo.FindByTokenHash(tokenHash)
+		// Rate Limitの時間枠をリセット
+		if now.Sub(session.WindowStart) >= RateLimitWindow {
+			session.WindowStart = now
+			session.OrderCount = 0
+		}
 
+		// 10分間に3回まで
+		if session.OrderCount >= MaxOrdersPerWindow {
+			return false, ErrRateLimited
+		}
+
+		session.OrderCount++
+		return true, nil
+	})
 	if errors.Is(err, repository.ErrNotFound) {
 		return ErrInvalidSession
 	}
+	return err
+}
 
-	if err != nil {
-		return err
-	}
+func (u *orderAccessUsecase) RefundOrder(sessionToken string) error {
+	tokenHash := hashToken(sessionToken)
+	err := u.repo.UpdateWithLock(tokenHash, func(session *models.OrderSession) (bool, error) {
+		if session.OrderCount == 0 {
+			return false, nil
+		}
 
-	// Session期限切れ
-	if !now.Before(session.ExpiresAt) {
+		session.OrderCount--
+		return true, nil
+	})
+	if errors.Is(err, repository.ErrNotFound) {
 		return ErrInvalidSession
 	}
-
-	// Rate Limitの時間枠をリセット
-	if now.Sub(session.WindowStart) >= RateLimitWindow {
-		session.WindowStart = now
-		session.OrderCount = 0
-	}
-
-	// 10分間に3回まで
-	if session.OrderCount >= MaxOrdersPerWindow {
-		return ErrRateLimited
-	}
-
-	session.OrderCount++
-
-	if err := u.repo.Save(session); err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (u *orderAccessUsecase) DeleteExpiredSessions() error {

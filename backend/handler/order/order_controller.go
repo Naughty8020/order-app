@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	orderAccessHandler "order-system/handler/orderaccess"
 	orderUsecase "order-system/usecase/order"
 
 	"github.com/gin-gonic/gin"
@@ -87,6 +88,7 @@ func (h *orderHandlerImpl) CreateOrder(c *gin.Context) {
 		})
 		return
 	}
+	orderAccessHandler.MarkOrderPersisted(c)
 
 	res := CreateOrderResponse{
 		ReceiptToken:     createdOrder.ReceiptToken,
@@ -178,6 +180,10 @@ func (h *orderHandlerImpl) UpdateOrderStatus(c *gin.Context) {
 		req.Status,
 	)
 	if err != nil {
+		if errors.Is(err, orderUsecase.ErrCompletedOrderImmutable) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
 		if errors.Is(err, orderUsecase.ErrInvalidOrderStatus) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return

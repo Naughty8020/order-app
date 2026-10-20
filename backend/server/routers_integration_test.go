@@ -210,6 +210,14 @@ func TestIntegrationLegacyOrderAndPublicProjection(t *testing.T) {
 			t.Fatalf("legacy order status=%s expiry=%v", saved.Status, saved.ReceiptExpiresAt)
 		}
 	}
+	api(t, r, "PUT", "/api/orders/101/status", `{"status":"ready"}`, auth, 409)
+	var completed models.Order
+	if err := db.First(&completed, 101).Error; err != nil {
+		t.Fatal(err)
+	}
+	if completed.Status != "completed" {
+		t.Fatalf("completed order was changed: %s", completed.Status)
+	}
 	api(t, r, "PUT", "/api/orders/102/status", `{"status":"completed"}`, auth, 200)
 	if public := string(api(t, r, "GET", "/api/orders/public", "", nil, 200)); public != `{"orders":[]}` {
 		t.Fatalf("empty public response = %s", public)

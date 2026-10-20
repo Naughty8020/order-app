@@ -18,6 +18,7 @@ type accessStub struct {
 	current  func() (string, time.Time)
 	exchange func(string) (string, time.Time, error)
 	consume  func(string) error
+	refund   func(string) error
 }
 
 func (s accessStub) CurrentQRToken() (string, time.Time) { return s.current() }
@@ -25,7 +26,13 @@ func (s accessStub) ExchangeQRToken(token string) (string, time.Time, error) {
 	return s.exchange(token)
 }
 func (s accessStub) ConsumeOrder(token string) error { return s.consume(token) }
-func (s accessStub) DeleteExpiredSessions() error    { panic("unexpected DeleteExpiredSessions") }
+func (s accessStub) RefundOrder(token string) error {
+	if s.refund == nil {
+		return nil
+	}
+	return s.refund(token)
+}
+func (s accessStub) DeleteExpiredSessions() error { panic("unexpected DeleteExpiredSessions") }
 
 func assertResponse(t *testing.T, response *httptest.ResponseRecorder, status int, want map[string]string) {
 	t.Helper()
@@ -38,6 +45,83 @@ func assertResponse(t *testing.T, response *httptest.ResponseRecorder, status in
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("body = %v, want %v", got, want)
+	}
+}
+
+func TestRequireOrderSessionRefundsRejectedOrder(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	consumeCalls, refundCalls := 0, 0
+	handler := NewHandler(accessStub{
+		consume: func(token string) error {
+			consumeCalls++
+			return nil
+		},
+		refund: func(token string) error {
+			refundCalls++
+			if token != "session-token" {
+				t.Errorf("token = %q", token)
+			}
+			return nil
+		},
+	})
+	router := gin.New()
+	router.POST("/orders", handler.RequireOrderSession, func(c *gin.Context) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+	})
+	request := httptest.NewRequest(http.MethodPost, "/orders", nil)
+	request.Header.Set("X-Order-Session", "session-token")
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d", response.Code)
+	}
+	if consumeCalls != 1 || refundCalls != 1 {
+		t.Fatalf("consume calls = %d, refund calls = %d", consumeCalls, refundCalls)
+	}
+}
+
+func TestRequireOrderSessionKeepsSuccessfulOrderConsumption(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	refundCalls := 0
+	handler := NewHandler(accessStub{
+		consume: func(string) error { return nil },
+		refund:  func(string) error { refundCalls++; return nil },
+	})
+	router := gin.New()
+	router.POST("/orders", handler.RequireOrderSession, func(c *gin.Context) {
+		MarkOrderPersisted(c)
+		c.JSON(http.StatusCreated, gin.H{"result": "ok"})
+	})
+	request := httptest.NewRequest(http.MethodPost, "/orders", nil)
+	request.Header.Set("X-Order-Session", "session-token")
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+
+	if response.Code != http.StatusCreated || refundCalls != 0 {
+		t.Fatalf("status = %d, refund calls = %d", response.Code, refundCalls)
+	}
+}
+
+func TestRequireOrderSessionDoesNotRefundAfterPersistence(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	refundCalls := 0
+	handler := NewHandler(accessStub{
+		consume: func(string) error { return nil },
+		refund:  func(string) error { refundCalls++; return nil },
+	})
+	router := gin.New()
+	router.POST("/orders", handler.RequireOrderSession, func(c *gin.Context) {
+		MarkOrderPersisted(c)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "response failed"})
+	})
+	request := httptest.NewRequest(http.MethodPost, "/orders", nil)
+	request.Header.Set("X-Order-Session", "session-token")
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+
+	if response.Code != http.StatusInternalServerError || refundCalls != 0 {
+		t.Fatalf("status = %d, refund calls = %d", response.Code, refundCalls)
 	}
 }
 

@@ -7,7 +7,6 @@ type OrderRepository interface {
 	FindPublicOrders() ([]models.PublicOrder, error)
 	FindByID(id uint) (*models.Order, error)
 	FindMenuByID(id uint) (*models.Menu, error)
-	CreateOrder(order *models.Order) error
-	CreateOrderItem(orderItem *models.OrderItem) error
+	CreateOrderWithItems(order *models.Order, items []models.OrderItem) error
 	Save(order *models.Order) error
 }

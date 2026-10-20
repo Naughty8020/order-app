@@ -55,6 +55,92 @@ func TestFindByTokenHashUnit(t *testing.T) {
 	}
 }
 
+func TestUpdateWithLockUnit(t *testing.T) {
+	dbErr := errors.New("update failed")
+	callbackErr := errors.New("callback failed")
+	now := testsql.Now()
+
+	for _, tt := range []struct {
+		name        string
+		found       bool
+		queryErr    error
+		callbackErr error
+		changed     bool
+		updateErr   error
+		commitErr   error
+		wantErr     error
+	}{
+		{name: "行ロックして更新", found: true, changed: true},
+		{name: "変更なしなら保存しない", found: true},
+		{name: "存在しないセッション", wantErr: repository.ErrNotFound},
+		{name: "検索失敗", queryErr: dbErr, wantErr: dbErr},
+		{name: "コールバック失敗", found: true, callbackErr: callbackErr, wantErr: callbackErr},
+		{name: "更新失敗", found: true, changed: true, updateErr: dbErr, wantErr: dbErr},
+		{name: "コミット失敗", found: true, changed: true, commitErr: dbErr, wantErr: dbErr},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock := testsql.Open(t)
+			mock.ExpectBegin()
+			query := mock.ExpectQuery("SELECT * FROM `order_sessions` WHERE token_hash = ? ORDER BY `order_sessions`.`id` LIMIT ? FOR UPDATE").
+				WithArgs("hash", 1)
+			rows := sqlmock.NewRows([]string{"id", "token_hash", "expires_at", "window_start", "order_count", "created_at"})
+			if tt.found {
+				rows.AddRow(7, "hash", now.Add(30*time.Minute), now, 2, now)
+			}
+			if tt.queryErr != nil {
+				query.WillReturnError(tt.queryErr)
+			} else {
+				query.WillReturnRows(rows).RowsWillBeClosed()
+			}
+
+			if tt.changed && tt.found && tt.queryErr == nil && tt.callbackErr == nil {
+				exec := mock.ExpectExec("UPDATE `order_sessions` SET `token_hash`=?,`expires_at`=?,`window_start`=?,`order_count`=?,`created_at`=? WHERE `id` = ?").
+					WithArgs("hash", now.Add(30*time.Minute), now, 1, now, 7)
+				if tt.updateErr != nil {
+					exec.WillReturnError(tt.updateErr)
+				} else {
+					exec.WillReturnResult(sqlmock.NewResult(0, 1))
+				}
+			}
+
+			success := tt.found && tt.queryErr == nil && tt.callbackErr == nil && tt.updateErr == nil
+			if success {
+				commit := mock.ExpectCommit()
+				if tt.commitErr != nil {
+					commit.WillReturnError(tt.commitErr)
+				}
+			} else {
+				mock.ExpectRollback()
+			}
+
+			callbackCalls := 0
+			err := NewOrderSessionRepository(db).UpdateWithLock("hash", func(session *models.OrderSession) (bool, error) {
+				callbackCalls++
+				if session.OrderCount != 2 {
+					t.Fatalf("count = %d, want 2", session.OrderCount)
+				}
+				if tt.callbackErr != nil {
+					return false, tt.callbackErr
+				}
+				if tt.changed {
+					session.OrderCount--
+				}
+				return tt.changed, nil
+			})
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("error = %v, want %v", err, tt.wantErr)
+			}
+			wantCallbackCalls := 0
+			if tt.found && tt.queryErr == nil {
+				wantCallbackCalls = 1
+			}
+			if callbackCalls != wantCallbackCalls {
+				t.Errorf("callback calls = %d, want %d", callbackCalls, wantCallbackCalls)
+			}
+		})
+	}
+}
+
 func TestSessionWritesUnit(t *testing.T) {
 	dbErr := errors.New("write failed")
 	now := testsql.Now()
