@@ -100,60 +100,47 @@ func (u *orderAccessUsecase) ConsumeOrder(
 ) error {
 
 	now := u.now()
-
 	tokenHash := hashToken(sessionToken)
+	err := u.repo.UpdateWithLock(tokenHash, func(session *models.OrderSession) (bool, error) {
+		// Session期限切れ
+		if !now.Before(session.ExpiresAt) {
+			return false, ErrInvalidSession
+		}
 
-	session, err := u.repo.FindByTokenHash(tokenHash)
+		// Rate Limitの時間枠をリセット
+		if now.Sub(session.WindowStart) >= RateLimitWindow {
+			session.WindowStart = now
+			session.OrderCount = 0
+		}
 
+		// 10分間に3回まで
+		if session.OrderCount >= MaxOrdersPerWindow {
+			return false, ErrRateLimited
+		}
+
+		session.OrderCount++
+		return true, nil
+	})
 	if errors.Is(err, repository.ErrNotFound) {
 		return ErrInvalidSession
 	}
-
-	if err != nil {
-		return err
-	}
-
-	// Session期限切れ
-	if !now.Before(session.ExpiresAt) {
-		return ErrInvalidSession
-	}
-
-	// Rate Limitの時間枠をリセット
-	if now.Sub(session.WindowStart) >= RateLimitWindow {
-		session.WindowStart = now
-		session.OrderCount = 0
-	}
-
-	// 10分間に3回まで
-	if session.OrderCount >= MaxOrdersPerWindow {
-		return ErrRateLimited
-	}
-
-	session.OrderCount++
-
-	if err := u.repo.Save(session); err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (u *orderAccessUsecase) RefundOrder(sessionToken string) error {
 	tokenHash := hashToken(sessionToken)
-	session, err := u.repo.FindByTokenHash(tokenHash)
+	err := u.repo.UpdateWithLock(tokenHash, func(session *models.OrderSession) (bool, error) {
+		if session.OrderCount == 0 {
+			return false, nil
+		}
+
+		session.OrderCount--
+		return true, nil
+	})
 	if errors.Is(err, repository.ErrNotFound) {
 		return ErrInvalidSession
 	}
-	if err != nil {
-		return err
-	}
-
-	if session.OrderCount == 0 {
-		return nil
-	}
-
-	session.OrderCount--
-	return u.repo.Save(session)
+	return err
 }
 
 func (u *orderAccessUsecase) DeleteExpiredSessions() error {

@@ -14,18 +14,19 @@ import (
 
 // DBの代役。設定していないメソッドが呼ばれた場合もテストを失敗させる。
 type sessionRepositoryStub struct {
-	createFn func(*models.OrderSession) error
-	findFn   func(string) (*models.OrderSession, error)
-	saveFn   func(*models.OrderSession) error
-	deleteFn func() error
+	createFn         func(*models.OrderSession) error
+	updateWithLockFn func(string, func(*models.OrderSession) (bool, error)) error
+	deleteFn         func() error
 }
 
 func (r *sessionRepositoryStub) Create(s *models.OrderSession) error { return r.createFn(s) }
-func (r *sessionRepositoryStub) FindByTokenHash(hash string) (*models.OrderSession, error) {
-	return r.findFn(hash)
+func (r *sessionRepositoryStub) UpdateWithLock(
+	hash string,
+	update func(*models.OrderSession) (bool, error),
+) error {
+	return r.updateWithLockFn(hash, update)
 }
-func (r *sessionRepositoryStub) Save(s *models.OrderSession) error { return r.saveFn(s) }
-func (r *sessionRepositoryStub) DeleteExpired() error              { return r.deleteFn() }
+func (r *sessionRepositoryStub) DeleteExpired() error { return r.deleteFn() }
 
 func TestExchangeQRToken(t *testing.T) {
 	dbErr := errors.New("create failed")
@@ -155,32 +156,35 @@ func TestConsumeOrder(t *testing.T) {
 			now := time.Date(2026, 10, 11, 12, 5, 0, 0, time.UTC)
 			session := models.OrderSession{OrderCount: tt.count, ExpiresAt: now.Add(tt.expiresIn), WindowStart: now.Add(-tt.windowAge)}
 			original := session
-			findCalls, saveCalls := 0, 0
+			updateCalls, saveCalls := 0, 0
 			repo := &sessionRepositoryStub{
-				findFn: func(hash string) (*models.OrderSession, error) {
-					findCalls++
+				updateWithLockFn: func(hash string, update func(*models.OrderSession) (bool, error)) error {
+					updateCalls++
 					expected := sha256.Sum256([]byte("session-token"))
 					if hash != base64.RawURLEncoding.EncodeToString(expected[:]) {
 						t.Fatal("検索にトークンのハッシュを使用していない")
 					}
 					if tt.findErr != nil {
-						return nil, tt.findErr
+						return tt.findErr
 					}
-					return &session, nil
-				},
-				saveFn: func(s *models.OrderSession) error {
-					saveCalls++
-					if s.OrderCount != tt.wantCount {
-						t.Errorf("saved count = %d, want %d", s.OrderCount, tt.wantCount)
+					changed, err := update(&session)
+					if err != nil {
+						return err
+					}
+					if changed {
+						saveCalls++
+					}
+					if session.OrderCount != tt.wantCount {
+						t.Errorf("saved count = %d, want %d", session.OrderCount, tt.wantCount)
 					}
 					wantStart := original.WindowStart
 					if tt.wantReset {
 						wantStart = now
 					}
-					if !s.WindowStart.Equal(wantStart) {
-						t.Errorf("window start = %v, want %v", s.WindowStart, wantStart)
+					if !session.WindowStart.Equal(wantStart) {
+						t.Errorf("window start = %v, want %v", session.WindowStart, wantStart)
 					}
-					if !s.ExpiresAt.Equal(original.ExpiresAt) {
+					if !session.ExpiresAt.Equal(original.ExpiresAt) {
 						t.Error("注文によって有効期限が変更された")
 					}
 					return tt.saveErr
@@ -198,8 +202,8 @@ func TestConsumeOrder(t *testing.T) {
 			if tt.wantSave {
 				wantSaveCalls = 1
 			}
-			if findCalls != 1 || saveCalls != wantSaveCalls {
-				t.Errorf("Find calls = %d, Save calls = %d; want 1, %d", findCalls, saveCalls, wantSaveCalls)
+			if updateCalls != 1 || saveCalls != wantSaveCalls {
+				t.Errorf("Update calls = %d, Save calls = %d; want 1, %d", updateCalls, saveCalls, wantSaveCalls)
 			}
 			if !tt.wantSave && session != original {
 				t.Error("拒否された注文でセッションが変更された")
@@ -229,16 +233,19 @@ func TestRefundOrder(t *testing.T) {
 			session := models.OrderSession{OrderCount: tt.count}
 			saveCalls := 0
 			repo := &sessionRepositoryStub{
-				findFn: func(string) (*models.OrderSession, error) {
+				updateWithLockFn: func(_ string, update func(*models.OrderSession) (bool, error)) error {
 					if tt.findErr != nil {
-						return nil, tt.findErr
+						return tt.findErr
 					}
-					return &session, nil
-				},
-				saveFn: func(saved *models.OrderSession) error {
-					saveCalls++
-					if saved.OrderCount != tt.wantCount {
-						t.Errorf("saved count = %d, want %d", saved.OrderCount, tt.wantCount)
+					changed, err := update(&session)
+					if err != nil {
+						return err
+					}
+					if changed {
+						saveCalls++
+					}
+					if session.OrderCount != tt.wantCount {
+						t.Errorf("saved count = %d, want %d", session.OrderCount, tt.wantCount)
 					}
 					return tt.saveErr
 				},

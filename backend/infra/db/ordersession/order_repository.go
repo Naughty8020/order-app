@@ -6,6 +6,7 @@ import (
 	"order-system/models"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type orderSessionRepository struct {
@@ -47,6 +48,33 @@ func (r *orderSessionRepository) Save(session *models.OrderSession) error {
 		return err
 	}
 	return nil
+}
+
+// UpdateWithLock serializes changes to the same session so concurrent order
+// reservations and refunds cannot overwrite each other's counters.
+func (r *orderSessionRepository) UpdateWithLock(
+	tokenHash string,
+	update func(*models.OrderSession) (bool, error),
+) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var session models.OrderSession
+		err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("token_hash = ?", tokenHash).
+			First(&session).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return repository.ErrNotFound
+		}
+		if err != nil {
+			return err
+		}
+
+		changed, err := update(&session)
+		if err != nil || !changed {
+			return err
+		}
+
+		return tx.Save(&session).Error
+	})
 }
 
 func (r *orderSessionRepository) DeleteExpired() error {
