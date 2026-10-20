@@ -188,6 +188,34 @@ func TestIntegrationOrderingFlow(t *testing.T) {
 	api(t, r, "GET", receiptPath, "", receiptHeaders, 404)
 }
 
+func TestIntegrationLegacyOrderAndPublicProjection(t *testing.T) {
+	r, db := integrationApp(t)
+	auth := login(t, r)
+	// Simulate pre-receipt rows after AutoMigrate adds a nullable expiry.
+	if err := db.Exec("INSERT INTO orders (id, status, created_at, receipt_expires_at) VALUES (101, 'pending', NOW(), NULL), (102, 'ready', NOW(), NULL), (103, 'completed', NOW(), NULL)").Error; err != nil {
+		t.Fatal(err)
+	}
+	public := string(api(t, r, "GET", "/api/orders/public", "", nil, 200))
+	if public != `{"orders":[{"id":101,"status":"pending"},{"id":102,"status":"ready"}]}` {
+		t.Fatalf("public response = %s", public)
+	}
+	api(t, r, "GET", "/api/orders/101/receipt", "", map[string]string{"X-Order-Receipt": strings.Repeat("a", 43)}, 404)
+	for _, status := range []string{"ready", "completed"} {
+		api(t, r, "PUT", "/api/orders/101/status", fmt.Sprintf(`{"status":%q}`, status), auth, 200)
+		var saved models.Order
+		if err := db.First(&saved, 101).Error; err != nil {
+			t.Fatal(err)
+		}
+		if saved.Status != status || saved.ReceiptExpiresAt != nil {
+			t.Fatalf("legacy order status=%s expiry=%v", saved.Status, saved.ReceiptExpiresAt)
+		}
+	}
+	api(t, r, "PUT", "/api/orders/102/status", `{"status":"completed"}`, auth, 200)
+	if public := string(api(t, r, "GET", "/api/orders/public", "", nil, 200)); public != `{"orders":[]}` {
+		t.Fatalf("empty public response = %s", public)
+	}
+}
+
 func TestIntegrationRejectedRequests(t *testing.T) {
 	for _, tt := range []struct {
 		name, method, path, body string

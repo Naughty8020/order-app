@@ -11,12 +11,11 @@ import (
 	orderUsecase "order-system/usecase/order"
 )
 
-func TestPublicOrdersExcludeDetailsAndCompletedOrders(t *testing.T) {
-	uc := &orderUsecaseMock{getOrdersFn: func() ([]models.Order, error) {
-		return []models.Order{
-			{ID: 1, Status: "pending", ReceiptTokenHash: "secret", OrderItems: []models.OrderItem{{Name: "private item"}}},
+func TestPublicOrdersUsePublicProjection(t *testing.T) {
+	uc := &orderUsecaseMock{getPublicOrdersFn: func() ([]models.PublicOrder, error) {
+		return []models.PublicOrder{
+			{ID: 1, Status: "pending"},
 			{ID: 2, Status: "ready"},
-			{ID: 3, Status: "completed"},
 		}, nil
 	}}
 	r := gin.New()

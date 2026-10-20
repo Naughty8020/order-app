@@ -29,7 +29,11 @@ func TestReceiptAuthorization(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			uc := NewOrderUsecase(&orderRepositoryMock{
 				findByIDFn: func(id uint) (*models.Order, error) {
-					return &models.Order{ID: id, Status: "completed", ReceiptTokenHash: tc.hash, ReceiptExpiresAt: tc.expires}, tc.err
+					var expiresAt *time.Time
+					if !tc.expires.IsZero() {
+						expiresAt = &tc.expires
+					}
+					return &models.Order{ID: id, Status: "completed", ReceiptTokenHash: tc.hash, ReceiptExpiresAt: expiresAt}, tc.err
 				},
 			})
 			order, err := uc.GetReceipt(7, tc.token)
@@ -77,7 +81,10 @@ func TestCreatedReceiptIsHashedAndNotSerializedInOrder(t *testing.T) {
 	if len(created.ReceiptToken) != 43 || saved.ReceiptTokenHash != receiptHash(created.ReceiptToken) || saved.ReceiptToken != "" {
 		t.Fatal("receipt is not stored as hash")
 	}
-	if remaining := time.Until(saved.ReceiptExpiresAt); remaining < 23*time.Hour || remaining > ReceiptLifetime {
+	if saved.ReceiptExpiresAt == nil {
+		t.Fatal("missing receipt expiry")
+	}
+	if remaining := time.Until(*saved.ReceiptExpiresAt); remaining < 23*time.Hour || remaining > ReceiptLifetime {
 		t.Fatal("wrong receipt lifetime")
 	}
 	data, _ := json.Marshal(created)

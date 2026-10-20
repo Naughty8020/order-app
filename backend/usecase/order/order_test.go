@@ -8,12 +8,17 @@ import (
 )
 
 type orderRepositoryMock struct {
-	findAllFn         func() ([]models.Order, error)
-	findByIDFn        func(uint) (*models.Order, error)
-	findMenuByIDFn    func(uint) (*models.Menu, error)
-	createOrderFn     func(*models.Order) error
-	createOrderItemFn func(*models.OrderItem) error
-	saveFn            func(*models.Order) error
+	findPublicOrdersFn func() ([]models.PublicOrder, error)
+	findAllFn          func() ([]models.Order, error)
+	findByIDFn         func(uint) (*models.Order, error)
+	findMenuByIDFn     func(uint) (*models.Menu, error)
+	createOrderFn      func(*models.Order) error
+	createOrderItemFn  func(*models.OrderItem) error
+	saveFn             func(*models.Order) error
+}
+
+func (m *orderRepositoryMock) FindPublicOrders() ([]models.PublicOrder, error) {
+	return m.findPublicOrdersFn()
 }
 
 func (m *orderRepositoryMock) FindAll() ([]models.Order, error) { return m.findAllFn() }

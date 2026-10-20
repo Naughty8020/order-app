@@ -116,22 +116,12 @@ func (h *orderHandlerImpl) GetReceipt(c *gin.Context) {
 
 func (h *orderHandlerImpl) GetPublicOrders(c *gin.Context) {
 	c.Header("Cache-Control", "no-store")
-	orders, err := h.orderUsecase.GetOrders()
+	orders, err := h.orderUsecase.GetPublicOrders()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve orders"})
 		return
 	}
-	type publicOrder struct {
-		ID     uint   `json:"id"`
-		Status string `json:"status"`
-	}
-	result := make([]publicOrder, 0)
-	for _, order := range orders {
-		if order.Status == "pending" || order.Status == "ready" {
-			result = append(result, publicOrder{order.ID, order.Status})
-		}
-	}
-	c.JSON(http.StatusOK, gin.H{"orders": result})
+	c.JSON(http.StatusOK, gin.H{"orders": orders})
 }
 
 func (h *orderHandlerImpl) GetOrders(c *gin.Context) {

@@ -24,6 +24,7 @@ func receiptHash(token string) string {
 type OrderUsecase interface {
 	CreateOrder(items []CreateOrderItemInput) (*models.Order, error)
 	GetOrders() ([]models.Order, error)
+	GetPublicOrders() ([]models.PublicOrder, error)
 	GetReceipt(id uint, token string) (*models.Order, error)
 	UpdateOrderStatus(id uint, status string) (*models.Order, error)
 }
@@ -47,6 +48,10 @@ func (u *orderUsecaseImpl) GetOrders() ([]models.Order, error) {
 	return u.repo.FindAll()
 }
 
+func (u *orderUsecaseImpl) GetPublicOrders() ([]models.PublicOrder, error) {
+	return u.repo.FindPublicOrders()
+}
+
 func (u *orderUsecaseImpl) GetReceipt(id uint, token string) (*models.Order, error) {
 	if len(token) != 43 {
 		return nil, ErrInvalidReceipt
@@ -58,7 +63,7 @@ func (u *orderUsecaseImpl) GetReceipt(id uint, token string) (*models.Order, err
 	if err != nil {
 		return nil, err
 	}
-	if !time.Now().Before(order.ReceiptExpiresAt) ||
+	if order.ReceiptExpiresAt == nil || !time.Now().Before(*order.ReceiptExpiresAt) ||
 		subtle.ConstantTimeCompare([]byte(receiptHash(token)), []byte(order.ReceiptTokenHash)) != 1 {
 		return nil, ErrInvalidReceipt
 	}
@@ -78,10 +83,11 @@ func (u *orderUsecaseImpl) CreateOrder(
 		return nil, err
 	}
 	token := base64.RawURLEncoding.EncodeToString(raw)
+	expiresAt := time.Now().Add(ReceiptLifetime)
 	order := &models.Order{
 		Status:           "pending",
 		ReceiptTokenHash: receiptHash(token),
-		ReceiptExpiresAt: time.Now().Add(ReceiptLifetime),
+		ReceiptExpiresAt: &expiresAt,
 	}
 
 	if err := u.repo.CreateOrder(order); err != nil {

@@ -7,7 +7,7 @@ import (
 
 type CreateOrderResponse struct {
 	ReceiptToken     string             `json:"receipt_token"`
-	ReceiptExpiresAt time.Time          `json:"receipt_expires_at"`
+	ReceiptExpiresAt *time.Time         `json:"receipt_expires_at"`
 	CreatedAt        time.Time          `json:"created_at"`
 	ID               uint               `json:"id"`
 	Status           string             `json:"status"`
