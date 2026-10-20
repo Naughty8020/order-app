@@ -79,3 +79,51 @@ go test ./... -cover
 ## 注文状態
 
 注文状態は `pending`（準備中）、`ready`（呼び出し中）、`completed`（受け渡し完了）の3種類です。新規注文は `pending` で作成し、スタッフ画面から `ready`、`completed` に更新します。状態更新APIは `preparing` を含む上記以外の値をHTTP 400で拒否し、保存しません。
+
+## 結合テスト・E2Eテスト
+
+単体テストは従来どおり `go test ./...` で実行できます。以下は別途MySQLが必要です。
+
+- 結合テスト: `server/routers_integration_test.go`。実際のルーティング・認証・handler・usecase・repository・MySQLを接続し、ログイン、メニュー操作、注文と明細の保存、ステータス変更、回数制限、拒否時のDB状態を確認します。
+- E2Eテスト: `frontend/e2e/ordering.e2e.ts`。Chromiumでスタッフと顧客を操作し、QRリンクから注文・呼び出し・提供完了まで確認します。APIのモックは使いません。QR画像自体のカメラ読み取りは対象外です。
+
+まず `backend` でテスト専用MySQLを起動します。開発用DBとは別のコンテナです。
+
+```bash
+docker compose -p order-app-tests -f docker-compose.test.yml up -d --wait
+export TEST_MYSQL_DSN='root:test-only-password@tcp(127.0.0.1:13306)/?parseTime=true'
+
+# 単体＋結合テスト
+go test -tags=integration ./... -count=1
+
+# 結合テストだけ
+go test -tags=integration ./server -run '^TestIntegration' -v
+
+# E2E（同じターミナルで実行）
+cd ../frontend
+bun install --frozen-lockfile
+bunx playwright install chromium
+bun run test:e2e
+
+# 失敗時のレポート表示
+bunx playwright show-report
+```
+
+E2Eは専用API（127.0.0.1:18080）とVite（127.0.0.1:13000）を自動起動・終了します。
+既存サーバーは再利用しません。ログイン情報はテスト専用の `e2e-admin` / `e2e-password` です。
+テストAPIは `integration` ビルドタグ付きでのみビルドされ、本番APIにテスト用エンドポイントを追加しません。
+ブラウザの失敗時は `frontend/test-results/` にスクリーンショットとトレースを保存します。
+
+結合テストの各ケースとE2E実行ごとに、ランダム名 `order_app_test_*` のDBを新規作成し、
+終了時にそのDBだけを削除します。DSNに指定された既存DBは変更しません。
+DB作成・削除権限が必要なので、上記の専用MySQLを使用してください。
+`TEST_MYSQL_DSN` が未設定なら、結合・E2Eテストはスキップせず失敗します。
+
+実行後はテスト用コンテナを削除します。一時データも消去されます。
+
+```bash
+cd ../backend
+docker compose -p order-app-tests -f docker-compose.test.yml down
+```
+
+GitHub Actionsの `Integration and E2E` ワークフローでも、専用MySQLで両方を実行します。
