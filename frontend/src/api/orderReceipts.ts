@@ -1,5 +1,5 @@
-import type { Order } from "./order";
 import { getApiBase } from "./base";
+import type { Order } from "./order";
 
 interface Receipt {
 	id: number;
@@ -10,6 +10,8 @@ interface Receipt {
 const prefix = "order_receipt_v1:";
 // Keep the current page usable when browser storage is unavailable.
 const temporaryReceipts = new Map<string, Receipt>();
+// Completed orders are immutable, so avoid polling them again on this page.
+const cachedOrders = new Map<string, Order>();
 const keyFor = (id: number) => `${prefix}${getApiBase()}:${id}`;
 
 function valid(value: unknown): value is Receipt {
@@ -27,6 +29,7 @@ function valid(value: unknown): value is Receipt {
 
 function remove(key: string) {
 	temporaryReceipts.delete(key);
+	cachedOrders.delete(key);
 	try {
 		localStorage.removeItem(key);
 	} catch {
@@ -47,6 +50,7 @@ export function saveReceipt(
 	};
 	if (!valid(receipt)) return false;
 	const key = keyFor(receipt.id);
+	cachedOrders.delete(key);
 	try {
 		localStorage.setItem(key, JSON.stringify(receipt));
 		return true;
@@ -79,27 +83,42 @@ export async function getCustomerOrders(): Promise<Order[]> {
 		}
 		receipts.push(entry);
 	}
-	const orders = await Promise.all(
+	const results = await Promise.allSettled(
 		receipts.map(async (receipt) => {
-			const response = await fetch(
-				`${getApiBase()}/orders/${receipt.id}/receipt`,
-				{
-					headers: { "X-Order-Receipt": receipt.token },
-					cache: "no-store",
-				},
-			);
-			if (response.status === 404) {
-				remove(keyFor(receipt.id));
-				return null;
-			}
-			if (!response.ok)
-				throw new Error(
-					"注文履歴の取得に失敗しました。更新して再試行してください",
+			const key = keyFor(receipt.id);
+			const cached = cachedOrders.get(key);
+			if (cached?.status === "completed") return cached;
+			try {
+				const response = await fetch(
+					`${getApiBase()}/orders/${receipt.id}/receipt`,
+					{
+						headers: { "X-Order-Receipt": receipt.token },
+						cache: "no-store",
+					},
 				);
-			return (await response.json()) as Order;
+				if (response.status === 410) {
+					remove(key);
+					return null;
+				}
+				if (!response.ok)
+					throw new Error(
+						"注文履歴の取得に失敗しました。更新して再試行してください",
+					);
+				const order = (await response.json()) as Order;
+				cachedOrders.set(key, order);
+				return order;
+			} catch (error) {
+				if (cached) return cached;
+				throw error;
+			}
 		}),
 	);
-	return orders
-		.filter((order): order is Order => order !== null)
-		.sort((a, b) => b.id - a.id);
+	const orders = results.flatMap((result) =>
+		result.status === "fulfilled" && result.value ? [result.value] : [],
+	);
+	if (orders.length === 0) {
+		const failure = results.find((result) => result.status === "rejected");
+		if (failure?.status === "rejected") throw failure.reason;
+	}
+	return orders.sort((a, b) => b.id - a.id);
 }

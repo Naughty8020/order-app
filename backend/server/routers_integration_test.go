@@ -120,8 +120,8 @@ func TestIntegrationOrderingFlow(t *testing.T) {
 	if len(created.ReceiptToken) != 43 || stored.ReceiptTokenHash == created.ReceiptToken {
 		t.Fatal("receipt credential was not hashed")
 	}
-	api(t, r, "GET", receiptPath, "", nil, 404)
-	api(t, r, "GET", receiptPath, "", map[string]string{"X-Order-Receipt": strings.Repeat("z", 43)}, 404)
+	api(t, r, "GET", receiptPath, "", nil, 410)
+	api(t, r, "GET", receiptPath, "", map[string]string{"X-Order-Receipt": strings.Repeat("z", 43)}, 410)
 	receipt := decode[models.Order](t, api(t, r, "GET", receiptPath, "", receiptHeaders, 200))
 	if receipt.ID != created.ID || len(receipt.OrderItems) != 1 {
 		t.Fatal("receipt missing items")
@@ -185,7 +185,7 @@ func TestIntegrationOrderingFlow(t *testing.T) {
 	if err := db.Model(&models.Order{}).Where("id = ?", created.ID).Update("receipt_expires_at", time.Now().Add(-time.Second)).Error; err != nil {
 		t.Fatal(err)
 	}
-	api(t, r, "GET", receiptPath, "", receiptHeaders, 404)
+	api(t, r, "GET", receiptPath, "", receiptHeaders, 410)
 }
 
 func TestIntegrationLegacyOrderAndPublicProjection(t *testing.T) {
@@ -199,7 +199,7 @@ func TestIntegrationLegacyOrderAndPublicProjection(t *testing.T) {
 	if public != `{"orders":[{"id":101,"status":"pending"},{"id":102,"status":"ready"}]}` {
 		t.Fatalf("public response = %s", public)
 	}
-	api(t, r, "GET", "/api/orders/101/receipt", "", map[string]string{"X-Order-Receipt": strings.Repeat("a", 43)}, 404)
+	api(t, r, "GET", "/api/orders/101/receipt", "", map[string]string{"X-Order-Receipt": strings.Repeat("a", 43)}, 410)
 	for _, status := range []string{"ready", "completed"} {
 		api(t, r, "PUT", "/api/orders/101/status", fmt.Sprintf(`{"status":%q}`, status), auth, 200)
 		var saved models.Order

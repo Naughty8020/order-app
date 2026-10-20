@@ -31,7 +31,7 @@ func TestReceiptHandlerUsesHeaderAndDisablesCaching(t *testing.T) {
 	for _, tc := range []struct {
 		err    error
 		status int
-	}{{nil, 200}, {orderUsecase.ErrInvalidReceipt, 404}, {errors.New("db error"), 500}} {
+	}{{nil, 200}, {orderUsecase.ErrInvalidReceipt, 410}, {errors.New("db error"), 500}} {
 		uc := &orderUsecaseMock{getReceiptFn: func(id uint, token string) (*models.Order, error) {
 			if id != 7 || token != "receipt-secret" {
 				t.Fatal("missing receipt credentials")
