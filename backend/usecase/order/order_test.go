@@ -57,7 +57,7 @@ func TestCreateOrder(t *testing.T) {
 	usecase := NewOrderUsecase(repo)
 
 	got, err := usecase.CreateOrder([]CreateOrderItemInput{
-		{MenuID: 1, Quantity: 2},
+		{MenuID: 1, Quantity: 2, Option: "ジュース：オレンジジュース"},
 		{MenuID: 2, Quantity: 1},
 	})
 
@@ -70,7 +70,7 @@ func TestCreateOrder(t *testing.T) {
 	if len(createdItems) != 2 {
 		t.Fatalf("created items = %d, want 2", len(createdItems))
 	}
-	if createdItems[0].OrderID != 10 || createdItems[0].MenuID != 1 || createdItems[0].Quantity != 2 || createdItems[0].Price != 200 {
+	if createdItems[0].OrderID != 10 || createdItems[0].MenuID != 1 || createdItems[0].Quantity != 2 || createdItems[0].Price != 200 || createdItems[0].Option != "ジュース：オレンジジュース" {
 		t.Errorf("first item = %+v", createdItems[0])
 	}
 	if createdItems[1].OrderID != 10 || createdItems[1].MenuID != 2 || createdItems[1].Quantity != 1 || createdItems[1].Price != 300 {

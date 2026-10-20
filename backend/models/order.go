@@ -10,10 +10,11 @@ type Order struct {
 }
 
 type OrderItem struct {
-	ID       uint `gorm:"primaryKey;autoIncrement" json:"id"`
-	OrderID  uint `gorm:"not null;index" json:"order_id"`
-	MenuID   uint `gorm:"not null" json:"menu_id"`
-	Menu     Menu `gorm:"foreignKey:MenuID" json:"menu"`
-	Quantity int  `gorm:"not null;default:1" json:"quantity"`
-	Price    int  `gorm:"not null" json:"price"`
+	ID       uint   `gorm:"primaryKey;autoIncrement" json:"id"`
+	OrderID  uint   `gorm:"not null;index" json:"order_id"`
+	MenuID   uint   `gorm:"not null" json:"menu_id"`
+	Menu     Menu   `gorm:"foreignKey:MenuID" json:"menu"`
+	Quantity int    `gorm:"not null;default:1" json:"quantity"`
+	Price    int    `gorm:"not null" json:"price"`
+	Option   string `gorm:"type:varchar(100);not null;default:''" json:"option"`
 }

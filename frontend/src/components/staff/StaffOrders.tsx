@@ -78,9 +78,16 @@ export function StaffOrders({
 													key={item.id}
 													className="bg-[rgba(255,255,255,0.04)] p-2.5 rounded-[12px] border border-[rgba(255,255,255,0.06)] flex justify-between items-center text-xs"
 												>
-													<span className="text-white font-semibold truncate max-w-[140px]">
-														{item.menu.name}
-													</span>
+													<div className="min-w-0 max-w-[180px]">
+														<p className="truncate text-white font-semibold">
+															{item.menu.name}
+														</p>
+														{item.option && (
+															<p className="mt-1 text-[10px] leading-relaxed text-[#f9a8d4]">
+																{item.option}
+															</p>
+														)}
+													</div>
 													<span className="text-zinc-300 font-bold bg-white/5 border border-white/8 px-2 py-1 rounded text-[11px]">
 														x {item.quantity}
 													</span>
@@ -149,7 +156,10 @@ export function StaffOrders({
 											</span>
 											<span className="text-zinc-400">
 												{order.order_items
-													?.map((item) => `${item.menu.name} x${item.quantity}`)
+													?.map(
+														(item) =>
+															`${item.menu.name}${item.option ? `（${item.option}）` : ""} x${item.quantity}`,
+													)
 													.join(", ")}
 											</span>
 											<span className="text-zinc-500 ml-2">

@@ -154,7 +154,7 @@ func TestOrderWritesUnit(t *testing.T) {
 			}
 			return err
 		}},
-		{"注文明細作成", "INSERT INTO `order_items` (`order_id`,`menu_id`,`quantity`,`price`) VALUES (?,?,?,?)", []driver.Value{7, 3, 2, 200}, func(t *testing.T, r *OrderRepository) error {
+		{"注文明細作成", "INSERT INTO `order_items` (`order_id`,`menu_id`,`quantity`,`price`,`option`) VALUES (?,?,?,?,?)", []driver.Value{7, 3, 2, 200, ""}, func(t *testing.T, r *OrderRepository) error {
 			item := models.OrderItem{OrderID: 7, MenuID: 3, Quantity: 2, Price: 200}
 			err := r.CreateOrderItem(&item)
 			if err == nil && item.ID != 7 {

@@ -1,20 +1,20 @@
-import { GlassWater, Martini, Star, Wine } from "lucide-react";
+import { Martini, Star, Wine } from "lucide-react";
 import { useState } from "react";
 import type { Cart, Menu } from "../../../cart";
 import { isCocktailDrink } from "../../../utils/drinkVisuals";
 import { MenuCard } from "./MenuCard";
+import { MocktailOptionsModal } from "./MocktailOptionsModal";
 
 interface Props {
 	loading: boolean;
 	menus: Menu[];
 	cart: Cart;
-	addToCart: (menu: Menu) => void;
-	updateCartQty: (menuId: number, delta: number) => void;
+	addToCart: (menu: Menu, option?: string) => void;
+	updateCartQty: (itemKey: string | number, delta: number) => void;
 }
 const categories = [
-	{ id: "all", label: "すべて", icon: GlassWater },
 	{ id: "soft", label: "ソフトドリンク", icon: Martini },
-	{ id: "cocktail", label: "カクテル", icon: Wine },
+	{ id: "cocktail", label: "ノンアルカクテル", icon: Wine },
 	{ id: "recommended", label: "おすすめ", icon: Star },
 ] as const;
 export function MenuGrid({
@@ -24,16 +24,23 @@ export function MenuGrid({
 	addToCart,
 	updateCartQty,
 }: Props) {
-	const [category, setCategory] = useState<string>("all");
+	const [category, setCategory] = useState<string>("soft");
+	const [optionMenu, setOptionMenu] = useState<Menu | null>(null);
 	const visibleMenus = menus.filter(
 		(menu) =>
-			category === "all" ||
 			(category === "soft" && !isCocktailDrink(menu.name)) ||
 			(category === "cocktail" && isCocktailDrink(menu.name)) ||
 			(category === "recommended" && menu.is_recommended),
 	);
 	return (
 		<>
+			{optionMenu && (
+				<MocktailOptionsModal
+					menu={optionMenu}
+					onClose={() => setOptionMenu(null)}
+					onAdd={addToCart}
+				/>
+			)}
 			<nav className="club-categories" aria-label="ドリンクのカテゴリ">
 				{categories.map(({ id, label, icon: Icon }) => (
 					<button
@@ -61,8 +68,14 @@ export function MenuGrid({
 						<MenuCard
 							key={menu.id}
 							menu={menu}
-							inCart={cart[menu.id]}
-							addToCart={addToCart}
+							inCart={
+								isCocktailDrink(menu.name) ? undefined : cart[String(menu.id)]
+							}
+							addToCart={(selectedMenu) =>
+								isCocktailDrink(selectedMenu.name)
+									? setOptionMenu(selectedMenu)
+									: addToCart(selectedMenu)
+							}
 							updateCartQty={updateCartQty}
 						/>
 					))}

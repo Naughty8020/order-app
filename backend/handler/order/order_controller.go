@@ -69,6 +69,7 @@ func (h *orderHandlerImpl) CreateOrder(c *gin.Context) {
 		items = append(items, orderUsecase.CreateOrderItemInput{
 			MenuID:   item.MenuID,
 			Quantity: item.Quantity,
+			Option:   item.Option,
 		})
 	}
 

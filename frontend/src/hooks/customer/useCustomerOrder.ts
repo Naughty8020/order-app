@@ -65,6 +65,7 @@ export function useCustomerOrder(notifyReady = false) {
 				items: items.map((item) => ({
 					menu_id: item.menu.id,
 					quantity: item.quantity,
+					option: item.option,
 				})),
 			};
 

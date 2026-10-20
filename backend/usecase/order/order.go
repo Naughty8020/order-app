@@ -17,6 +17,7 @@ type OrderUsecase interface {
 type CreateOrderItemInput struct {
 	MenuID   uint
 	Quantity int
+	Option   string
 }
 
 type orderUsecaseImpl struct {
@@ -64,6 +65,7 @@ func (u *orderUsecaseImpl) CreateOrder(
 			MenuID:   input.MenuID,
 			Quantity: input.Quantity,
 			Price:    menu.Price,
+			Option:   input.Option,
 		}
 
 		if err := u.repo.CreateOrderItem(orderItem); err != nil {

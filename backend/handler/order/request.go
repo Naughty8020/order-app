@@ -5,8 +5,9 @@ type CreateOrderDTO struct {
 }
 
 type CreateOrderItemDTO struct {
-	MenuID   uint `json:"menu_id"`
-	Quantity int  `json:"quantity"`
+	MenuID   uint   `json:"menu_id"`
+	Quantity int    `json:"quantity"`
+	Option   string `json:"option" binding:"max=100"`
 }
 
 type UpdateOrderStatusDTO struct {

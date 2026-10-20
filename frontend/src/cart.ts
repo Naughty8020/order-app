@@ -8,28 +8,34 @@ export interface Menu {
 }
 
 export interface CartItem {
+	key?: string;
 	menu: Menu;
 	quantity: number;
+	option?: string;
 }
 
-export type Cart = Record<number, CartItem>;
+export type Cart = Record<string, CartItem>;
+
+export const getCartItemKey = (menuId: number, option?: string) =>
+	option ? `${menuId}:${option}` : String(menuId);
 
 export function changeCartQuantity(
 	cart: Cart,
-	menuId: number,
+	itemKey: string | number,
 	delta: number,
 ): Cart {
-	const current = cart[menuId];
+	const key = String(itemKey);
+	const current = cart[key];
 	if (!current) return cart;
 
 	const quantity = current.quantity + delta;
 	if (quantity <= 0) {
 		const next = { ...cart };
-		delete next[menuId];
+		delete next[key];
 		return next;
 	}
 
-	return { ...cart, [menuId]: { ...current, quantity } };
+	return { ...cart, [key]: { ...current, quantity } };
 }
 
 export function getCartSummary(cart: Cart) {
