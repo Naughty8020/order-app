@@ -48,34 +48,32 @@ func SeedAdmin(db *gorm.DB) error {
 // SeedMenus - メニューの初期データを投入する関数
 func SeedMenus(db *gorm.DB) {
 	menus := []models.Menu{
-		{ID: 1, Name: "コーラ (Cola)", Price: 200, IsAvailable: true},
-		{ID: 2, Name: "ファンタグレープ (Fanta Grape)", Price: 200, IsAvailable: true},
-		{ID: 3, Name: "ファンタオレンジ (Fanta Orange)", Price: 200, IsAvailable: true},
-		{ID: 4, Name: "三ツ矢サイダー (Mitsuya Cider)", Price: 200, IsAvailable: true},
-		{ID: 5, Name: "アップルジュース (Apple Juice)", Price: 200, IsAvailable: true},
-		{ID: 6, Name: "オレンジジュース (Orange Juice)", Price: 200, IsAvailable: true},
-		{ID: 7, Name: "シャーリー・テンプル風", Price: 300, IsAvailable: true},
-		{ID: 8, Name: "フルーツ・サイダーポンチ", Price: 300, IsAvailable: true},
-		{ID: 9, Name: "オレンジ・グレープ・フィズ", Price: 300, IsAvailable: true},
-		{ID: 10, Name: "サンライズ風モクテル", Price: 300, IsAvailable: true},
+		{Name: "コーラ (Cola)", Price: 200, IsAvailable: true},
+		{Name: "ファンタグレープ (Fanta Grape)", Price: 200, IsAvailable: true},
+		{Name: "ファンタオレンジ (Fanta Orange)", Price: 200, IsAvailable: true},
+		{Name: "三ツ矢サイダー (Mitsuya Cider)", Price: 200, IsAvailable: true},
+		{Name: "アップルジュース (Apple Juice)", Price: 200, IsAvailable: true},
+		{Name: "オレンジジュース (Orange Juice)", Price: 200, IsAvailable: true},
+		{Name: "シャーリー・テンプル風", Price: 300, IsAvailable: true},
+		{Name: "フルーツ・サイダーポンチ", Price: 300, IsAvailable: true},
+		{Name: "オレンジ・グレープ・フィズ", Price: 300, IsAvailable: true},
+		{Name: "サンライズ風モクテル", Price: 300, IsAvailable: true},
 	}
 
 	log.Println("シードデータの投入を開始します...")
 
-	err := db.Clauses(clause.OnConflict{
-		Columns: []clause.Column{
-			{Name: "id"},
-		},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"name",
-			"price",
-		}),
-	}).Create(&menus).Error
-
-	if err != nil {
-		log.Printf("シードデータの投入に失敗しました: %v", err)
-		return
+	for index := range menus {
+		if err := seedMenu(db, &menus[index]); err != nil {
+			log.Printf("シードデータの投入に失敗しました: %v", err)
+			return
+		}
 	}
 
 	log.Println("シードデータの投入が完了しました！")
+}
+
+// seedMenu identifies built-in products by name instead of reserving database IDs.
+// Existing products and their availability are left untouched.
+func seedMenu(db *gorm.DB, menu *models.Menu) error {
+	return db.Where("name = ?", menu.Name).FirstOrCreate(menu).Error
 }

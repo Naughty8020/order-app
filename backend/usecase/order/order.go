@@ -13,19 +13,20 @@ import (
 
 var ErrInvalidOrderStatus = errors.New("status must be pending, ready, or completed")
 var ErrInvalidOrderOption = errors.New("invalid option for menu item")
+var ErrCompletedOrderImmutable = errors.New("completed order status cannot be changed")
 var ErrInvalidReceipt = errors.New("invalid or expired receipt")
 
 const ReceiptLifetime = 24 * time.Hour
 
-func validOrderOption(menuID uint, option string) bool {
-	switch menuID {
-	case 7:
+func validOrderOption(menuName string, option string) bool {
+	switch menuName {
+	case "シャーリー・テンプル風":
 		return option == "ジュース：オレンジジュース" || option == "ジュース：リンゴジュース"
-	case 8:
+	case "フルーツ・サイダーポンチ":
 		return option == "ジュース：アップルジュース" || option == "ジュース：オレンジジュース"
-	case 9:
+	case "オレンジ・グレープ・フィズ":
 		return option == ""
-	case 10:
+	case "サンライズ風モクテル":
 		return option == "コーラ垂らし：あり" || option == "コーラ垂らし：なし"
 	default:
 		return option == ""
@@ -105,7 +106,7 @@ func (u *orderUsecaseImpl) CreateOrder(
 		if !menu.IsAvailable {
 			return nil, errors.New("menu item is not available")
 		}
-		if !validOrderOption(menu.ID, input.Option) {
+		if !validOrderOption(menu.Name, input.Option) {
 			return nil, ErrInvalidOrderOption
 		}
 		menus[index] = menu
@@ -161,6 +162,9 @@ func (u *orderUsecaseImpl) UpdateOrderStatus(
 	order, err := u.repo.FindByID(id)
 	if err != nil {
 		return nil, err
+	}
+	if order.Status == "completed" && status != "completed" {
+		return nil, ErrCompletedOrderImmutable
 	}
 
 	order.Status = status

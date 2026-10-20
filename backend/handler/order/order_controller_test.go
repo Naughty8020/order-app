@@ -219,6 +219,19 @@ func TestUpdateOrderStatusHandlerReturnsInternalServerError(t *testing.T) {
 	}
 }
 
+func TestUpdateOrderStatusHandlerRejectsCompletedOrderChange(t *testing.T) {
+	usecase := &orderUsecaseMock{
+		updateOrderStatusFn: func(id uint, status string) (*models.Order, error) {
+			return nil, orderUsecase.ErrCompletedOrderImmutable
+		},
+	}
+	recorder := performOrderRequest(NewOrderHandler(usecase), http.MethodPut, "/api/orders/1/status", `{"status":"ready"}`)
+
+	if recorder.Code != http.StatusConflict {
+		t.Errorf("status = %d, want %d", recorder.Code, http.StatusConflict)
+	}
+}
+
 func performOrderRequest(handler Handler, method, path, body string) *httptest.ResponseRecorder {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()

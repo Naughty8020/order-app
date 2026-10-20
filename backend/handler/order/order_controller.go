@@ -178,6 +178,10 @@ func (h *orderHandlerImpl) UpdateOrderStatus(c *gin.Context) {
 		req.Status,
 	)
 	if err != nil {
+		if errors.Is(err, orderUsecase.ErrCompletedOrderImmutable) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
 		if errors.Is(err, orderUsecase.ErrInvalidOrderStatus) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
