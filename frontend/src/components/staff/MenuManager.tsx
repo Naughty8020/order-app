@@ -19,12 +19,12 @@ export function MenuManager({
 	return (
 		<>
 			{/* Menu Editor Sidebar */}
-			<div className="space-y-6">
-				<div className="bg-[#14141e]/40 border border-white/8 rounded-[16px] p-6 backdrop-blur-sm">
-					<h2 className="text-[15px] font-bold text-white flex items-center gap-2 mb-5 border-b border-[rgba(255,255,255,0.08)] pb-4">
+			<div className="lg:relative lg:min-h-0">
+				<div className="bg-[#14141e]/40 border border-white/8 rounded-[16px] p-6 backdrop-blur-sm lg:absolute lg:inset-0 lg:flex lg:flex-col">
+					<h2 className="text-[15px] font-bold text-white flex shrink-0 items-center gap-2 mb-5 border-b border-[rgba(255,255,255,0.08)] pb-4">
 						メニュー在庫コントロール
 					</h2>
-					<div className="space-y-3 max-h-[340px] overflow-y-auto pr-2 custom-scrollbar">
+					<div className="space-y-3 max-h-[340px] overflow-y-auto pr-2 custom-scrollbar lg:min-h-0 lg:max-h-none lg:flex-1">
 						{menus.map((menu) => (
 							<div
 								key={menu.id}
