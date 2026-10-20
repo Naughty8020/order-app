@@ -7,6 +7,22 @@ import (
 )
 
 var ErrInvalidOrderStatus = errors.New("status must be pending, ready, or completed")
+var ErrInvalidOrderOption = errors.New("invalid option for menu item")
+
+func validOrderOption(menuID uint, option string) bool {
+	switch menuID {
+	case 7:
+		return option == "ジュース：オレンジジュース" || option == "ジュース：リンゴジュース"
+	case 8:
+		return option == "ジュース：アップルジュース" || option == "ジュース：オレンジジュース"
+	case 9:
+		return option == ""
+	case 10:
+		return option == "コーラ垂らし：あり" || option == "コーラ垂らし：なし"
+	default:
+		return option == ""
+	}
+}
 
 type OrderUsecase interface {
 	CreateOrder(items []CreateOrderItemInput) (*models.Order, error)
@@ -42,15 +58,8 @@ func (u *orderUsecaseImpl) CreateOrder(
 		return nil, errors.New("order items cannot be empty")
 	}
 
-	order := &models.Order{
-		Status: "pending",
-	}
-
-	if err := u.repo.CreateOrder(order); err != nil {
-		return nil, err
-	}
-
-	for _, input := range items {
+	menus := make([]*models.Menu, len(items))
+	for index, input := range items {
 		menu, err := u.repo.FindMenuByID(input.MenuID)
 		if err != nil {
 			return nil, err
@@ -59,7 +68,22 @@ func (u *orderUsecaseImpl) CreateOrder(
 		if !menu.IsAvailable {
 			return nil, errors.New("menu item is not available")
 		}
+		if !validOrderOption(menu.ID, input.Option) {
+			return nil, ErrInvalidOrderOption
+		}
+		menus[index] = menu
+	}
 
+	order := &models.Order{
+		Status: "pending",
+	}
+
+	if err := u.repo.CreateOrder(order); err != nil {
+		return nil, err
+	}
+
+	for index, input := range items {
+		menu := menus[index]
 		orderItem := &models.OrderItem{
 			OrderID:  order.ID,
 			MenuID:   input.MenuID,

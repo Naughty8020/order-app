@@ -35,7 +35,7 @@ func (m *orderUsecaseMock) UpdateOrderStatus(id uint, status string) (*models.Or
 func TestCreateOrderHandler(t *testing.T) {
 	usecase := &orderUsecaseMock{
 		createOrderFn: func(items []orderUsecase.CreateOrderItemInput) (*models.Order, error) {
-			if len(items) != 2 || items[0].MenuID != 1 || items[0].Quantity != 2 || items[0].Option != "ジュース：オレンジジュース" || items[1].MenuID != 2 || items[1].Quantity != 1 {
+			if len(items) != 2 || items[0].MenuID != 7 || items[0].Quantity != 2 || items[0].Option != "ジュース：オレンジジュース" || items[1].MenuID != 2 || items[1].Quantity != 1 {
 				t.Errorf("CreateOrder() items = %+v", items)
 			}
 			return &models.Order{
@@ -52,7 +52,7 @@ func TestCreateOrderHandler(t *testing.T) {
 		NewOrderHandler(usecase),
 		http.MethodPost,
 		"/api/orders",
-		`{"items":[{"menu_id":1,"quantity":2,"option":"ジュース：オレンジジュース"},{"menu_id":2,"quantity":1}]}`,
+		`{"items":[{"menu_id":7,"quantity":2,"option":"ジュース：オレンジジュース"},{"menu_id":2,"quantity":1}]}`,
 	)
 
 	if recorder.Code != http.StatusCreated {
@@ -103,6 +103,19 @@ func TestCreateOrderHandlerReturnsInternalServerError(t *testing.T) {
 
 	if recorder.Code != http.StatusInternalServerError {
 		t.Errorf("status = %d, want %d", recorder.Code, http.StatusInternalServerError)
+	}
+}
+
+func TestCreateOrderHandlerRejectsInvalidOption(t *testing.T) {
+	usecase := &orderUsecaseMock{
+		createOrderFn: func(items []orderUsecase.CreateOrderItemInput) (*models.Order, error) {
+			return nil, orderUsecase.ErrInvalidOrderOption
+		},
+	}
+	recorder := performOrderRequest(NewOrderHandler(usecase), http.MethodPost, "/api/orders", `{"items":[{"menu_id":7,"quantity":1,"option":"指定外"}]}`)
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", recorder.Code, http.StatusBadRequest)
 	}
 }
 

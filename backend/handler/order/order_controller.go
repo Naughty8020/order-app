@@ -75,6 +75,10 @@ func (h *orderHandlerImpl) CreateOrder(c *gin.Context) {
 
 	createdOrder, err := h.orderUsecase.CreateOrder(items)
 	if err != nil {
+		if errors.Is(err, orderUsecase.ErrInvalidOrderOption) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})

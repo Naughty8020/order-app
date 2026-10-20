@@ -1,7 +1,7 @@
 import { Martini, Star, Wine } from "lucide-react";
 import { useState } from "react";
 import type { Cart, Menu } from "../../../cart";
-import { isCocktailDrink } from "../../../utils/drinkVisuals";
+import { isCocktailDrink, isMocktailDrink } from "../../../utils/drinkVisuals";
 import { MenuCard } from "./MenuCard";
 import { MocktailOptionsModal } from "./MocktailOptionsModal";
 
@@ -69,10 +69,10 @@ export function MenuGrid({
 							key={menu.id}
 							menu={menu}
 							inCart={
-								isCocktailDrink(menu.name) ? undefined : cart[String(menu.id)]
+								isMocktailDrink(menu.name) ? undefined : cart[String(menu.id)]
 							}
 							addToCart={(selectedMenu) =>
-								isCocktailDrink(selectedMenu.name)
+								isMocktailDrink(selectedMenu.name)
 									? setOptionMenu(selectedMenu)
 									: addToCart(selectedMenu)
 							}

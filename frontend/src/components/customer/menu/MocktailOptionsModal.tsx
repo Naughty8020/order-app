@@ -19,10 +19,12 @@ const getMocktailDetails = (name: string) => {
 		return {
 			recipe: "三ツ矢サイダー＋ファンタオレンジ＋ファンタグレープ",
 		};
-	return {
-		recipe: "オレンジジュース＋ファンタグレープ",
-		toggle: true,
-	};
+	if (name.startsWith("サンライズ風モクテル"))
+		return {
+			recipe: "オレンジジュース＋ファンタグレープ",
+			toggle: true,
+		};
+	return null;
 };
 
 export function MocktailOptionsModal({
@@ -35,8 +37,9 @@ export function MocktailOptionsModal({
 	onAdd: (menu: Menu, option?: string) => void;
 }) {
 	const details = getMocktailDetails(menu.name);
-	const [choice, setChoice] = useState(details.choices?.[0] ?? "");
+	const [choice, setChoice] = useState(details?.choices?.[0] ?? "");
 	const [addCola, setAddCola] = useState(false);
+	if (!details) return null;
 
 	const confirm = () => {
 		const option = details.choices

@@ -47,7 +47,9 @@ it("uses saved promotions rather than menu position, supports both badges, and r
 		expect(article.className).not.toContain("club-card-featured");
 	rerender(<MenuGrid {...props} menus={[{ ...menu, is_available: false }]} />);
 	expect(screen.getByText("SOLD OUT")).toBeTruthy();
-	expect(screen.queryByRole("button", { name: "コーラをカートに追加" })).toBeNull();
+	expect(
+		screen.queryByRole("button", { name: "コーラをカートに追加" }),
+	).toBeNull();
 });
 
 it("filters recommendations using saved settings, including after a refresh", () => {
@@ -88,4 +90,34 @@ it("filters recommendations using saved settings, including after a refresh", ()
 	);
 	expect(screen.getByRole("heading", { name: "コーラ" })).toBeTruthy();
 	expect(screen.queryByRole("heading", { name: "リンゴ" })).toBeNull();
+});
+
+it("未定義のカクテルは誤ったオプション画面を表示せず通常追加する", () => {
+	const addToCart = vi.fn();
+	render(
+		<MenuGrid
+			loading={false}
+			menus={[
+				{
+					id: 20,
+					name: "モヒート風カクテル",
+					price: 300,
+					is_available: true,
+				},
+			]}
+			cart={{}}
+			addToCart={addToCart}
+			updateCartQty={vi.fn()}
+		/>,
+	);
+
+	fireEvent.click(screen.getByRole("button", { name: "ノンアルカクテル" }));
+	fireEvent.click(
+		screen.getByRole("button", { name: "モヒート風カクテルをカートに追加" }),
+	);
+
+	expect(addToCart).toHaveBeenCalledWith(
+		expect.objectContaining({ name: "モヒート風カクテル" }),
+	);
+	expect(screen.queryByRole("dialog")).toBeNull();
 });

@@ -55,8 +55,10 @@ export function getDrinkVisual(name: string) {
 }
 export const isRecommendedDrink = (name: string) =>
 	/オレンジジュース|orange juice/i.test(name);
+export const isMocktailDrink = (name: string) =>
+	cocktails.some((drink) => name.startsWith(drink.name));
 export const isCocktailDrink = (name: string) =>
-	cocktails.some((drink) => name.startsWith(drink.name)) ||
+	isMocktailDrink(name) ||
 	/カクテル|cocktail|モヒート|mojito|ジントニック|gin tonic|カシス|ウォッカ|vodka|ラムコーク|ハイボール|highball/i.test(
 		name,
 	);
