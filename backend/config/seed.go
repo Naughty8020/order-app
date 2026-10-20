@@ -69,7 +69,6 @@ func SeedMenus(db *gorm.DB) {
 		DoUpdates: clause.AssignmentColumns([]string{
 			"name",
 			"price",
-			"is_available",
 		}),
 	}).Create(&menus).Error
 

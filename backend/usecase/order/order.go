@@ -123,24 +123,20 @@ func (u *orderUsecaseImpl) CreateOrder(
 		ReceiptExpiresAt: &expiresAt,
 	}
 
-	if err := u.repo.CreateOrder(order); err != nil {
-		return nil, err
-	}
-
+	orderItems := make([]models.OrderItem, len(items))
 	for index, input := range items {
 		menu := menus[index]
-		orderItem := &models.OrderItem{
+		orderItems[index] = models.OrderItem{
 			Name:     menu.Name,
-			OrderID:  order.ID,
 			MenuID:   input.MenuID,
 			Quantity: input.Quantity,
 			Price:    menu.Price,
 			Option:   input.Option,
 		}
+	}
 
-		if err := u.repo.CreateOrderItem(orderItem); err != nil {
-			return nil, err
-		}
+	if err := u.repo.CreateOrderWithItems(order, orderItems); err != nil {
+		return nil, err
 	}
 
 	saved, err := u.repo.FindByID(order.ID)

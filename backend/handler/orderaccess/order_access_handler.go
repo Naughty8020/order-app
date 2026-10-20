@@ -2,6 +2,7 @@ package orderaccess
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -51,7 +52,8 @@ func (h *Handler) CreateSession(c *gin.Context) {
 }
 
 func (h *Handler) RequireOrderSession(c *gin.Context) {
-	err := h.usecase.ConsumeOrder(c.GetHeader("X-Order-Session"))
+	sessionToken := c.GetHeader("X-Order-Session")
+	err := h.usecase.ConsumeOrder(sessionToken)
 	if errors.Is(err, ordersession.ErrRateLimited) {
 		c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
 			"error": "too many orders; please wait before ordering again",
@@ -71,6 +73,15 @@ func (h *Handler) RequireOrderSession(c *gin.Context) {
 		})
 		return
 	}
+
+	defer func() {
+		if c.Writer.Status() == http.StatusCreated {
+			return
+		}
+		if err := h.usecase.RefundOrder(sessionToken); err != nil {
+			slog.Error("failed to refund order session", "err", err)
+		}
+	}()
 
 	c.Next()
 }

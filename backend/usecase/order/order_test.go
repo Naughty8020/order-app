@@ -34,6 +34,18 @@ func (m *orderRepositoryMock) CreateOrder(order *models.Order) error {
 func (m *orderRepositoryMock) CreateOrderItem(item *models.OrderItem) error {
 	return m.createOrderItemFn(item)
 }
+func (m *orderRepositoryMock) CreateOrderWithItems(order *models.Order, items []models.OrderItem) error {
+	if err := m.createOrderFn(order); err != nil {
+		return err
+	}
+	for index := range items {
+		items[index].OrderID = order.ID
+		if err := m.createOrderItemFn(&items[index]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 func (m *orderRepositoryMock) Save(order *models.Order) error { return m.saveFn(order) }
 
 func TestCreateOrder(t *testing.T) {

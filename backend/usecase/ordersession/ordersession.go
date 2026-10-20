@@ -17,6 +17,7 @@ type OrderAccessUsecase interface {
 	CurrentQRToken() (string, time.Time)
 	ExchangeQRToken(qrToken string) (string, time.Time, error)
 	ConsumeOrder(sessionToken string) error
+	RefundOrder(sessionToken string) error
 	DeleteExpiredSessions() error
 }
 
@@ -135,6 +136,24 @@ func (u *orderAccessUsecase) ConsumeOrder(
 	}
 
 	return nil
+}
+
+func (u *orderAccessUsecase) RefundOrder(sessionToken string) error {
+	tokenHash := hashToken(sessionToken)
+	session, err := u.repo.FindByTokenHash(tokenHash)
+	if errors.Is(err, repository.ErrNotFound) {
+		return ErrInvalidSession
+	}
+	if err != nil {
+		return err
+	}
+
+	if session.OrderCount == 0 {
+		return nil
+	}
+
+	session.OrderCount--
+	return u.repo.Save(session)
 }
 
 func (u *orderAccessUsecase) DeleteExpiredSessions() error {
