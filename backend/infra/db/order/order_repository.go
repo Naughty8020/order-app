@@ -70,12 +70,24 @@ func (r *OrderRepository) FindMenuByID(id uint) (*models.Menu, error) {
 	return &menu, nil
 }
 
-func (r *OrderRepository) CreateOrder(order *models.Order) error {
-	return r.db.Create(order).Error
-}
+func (r *OrderRepository) CreateOrderWithItems(
+	order *models.Order,
+	items []models.OrderItem,
+) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(order).Error; err != nil {
+			return err
+		}
 
-func (r *OrderRepository) CreateOrderItem(orderItem *models.OrderItem) error {
-	return r.db.Create(orderItem).Error
+		for index := range items {
+			items[index].OrderID = order.ID
+			if err := tx.Create(&items[index]).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 func (r *OrderRepository) Save(order *models.Order) error {

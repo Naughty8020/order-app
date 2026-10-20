@@ -208,6 +208,56 @@ func TestConsumeOrder(t *testing.T) {
 	}
 }
 
+func TestRefundOrder(t *testing.T) {
+	dbErr := errors.New("database failed")
+	for _, tt := range []struct {
+		name      string
+		count     int
+		findErr   error
+		saveErr   error
+		wantErr   error
+		wantSave  bool
+		wantCount int
+	}{
+		{name: "予約した1回を戻す", count: 3, wantSave: true, wantCount: 2},
+		{name: "0回なら変更しない", count: 0},
+		{name: "存在しないセッション", findErr: repository.ErrNotFound, wantErr: ErrInvalidSession},
+		{name: "DB取得失敗", findErr: dbErr, wantErr: dbErr},
+		{name: "DB保存失敗", count: 1, saveErr: dbErr, wantErr: dbErr, wantSave: true, wantCount: 0},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			session := models.OrderSession{OrderCount: tt.count}
+			saveCalls := 0
+			repo := &sessionRepositoryStub{
+				findFn: func(string) (*models.OrderSession, error) {
+					if tt.findErr != nil {
+						return nil, tt.findErr
+					}
+					return &session, nil
+				},
+				saveFn: func(saved *models.OrderSession) error {
+					saveCalls++
+					if saved.OrderCount != tt.wantCount {
+						t.Errorf("saved count = %d, want %d", saved.OrderCount, tt.wantCount)
+					}
+					return tt.saveErr
+				},
+			}
+			err := NewOrderAccessUsecase(repo, "test-secret").RefundOrder("session-token")
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("error = %v, want %v", err, tt.wantErr)
+			}
+			wantSaveCalls := 0
+			if tt.wantSave {
+				wantSaveCalls = 1
+			}
+			if saveCalls != wantSaveCalls {
+				t.Errorf("Save calls = %d, want %d", saveCalls, wantSaveCalls)
+			}
+		})
+	}
+}
+
 func TestQRRotation(t *testing.T) {
 	for _, tt := range []struct {
 		name      string

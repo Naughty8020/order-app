@@ -146,22 +146,6 @@ func TestOrderWritesUnit(t *testing.T) {
 		args      []driver.Value
 		run       func(*testing.T, *OrderRepository) error
 	}{
-		{"注文作成", "INSERT INTO `orders` (`receipt_token_hash`,`receipt_expires_at`,`status`,`created_at`) VALUES (?,?,?,?)", []driver.Value{"", nil, "pending", testsql.Now()}, func(t *testing.T, r *OrderRepository) error {
-			order := models.Order{Status: "pending"}
-			err := r.CreateOrder(&order)
-			if err == nil && (order.ID != 7 || !order.CreatedAt.Equal(testsql.Now())) {
-				t.Errorf("created = %+v", order)
-			}
-			return err
-		}},
-		{"注文明細作成", "INSERT INTO `order_items` (`name`,`order_id`,`menu_id`,`quantity`,`price`,`option`) VALUES (?,?,?,?,?,?)", []driver.Value{"", 7, 3, 2, 200, ""}, func(t *testing.T, r *OrderRepository) error {
-			item := models.OrderItem{OrderID: 7, MenuID: 3, Quantity: 2, Price: 200}
-			err := r.CreateOrderItem(&item)
-			if err == nil && item.ID != 7 {
-				t.Errorf("ID = %d", item.ID)
-			}
-			return err
-		}},
 		{"ステータス保存", "UPDATE `orders` SET `receipt_token_hash`=?,`receipt_expires_at`=?,`status`=?,`created_at`=? WHERE `id` = ?", []driver.Value{"", nil, "ready", testsql.Now(), 7}, func(t *testing.T, r *OrderRepository) error {
 			return r.Save(&models.Order{ID: 7, Status: "ready", CreatedAt: testsql.Now()})
 		}},
@@ -191,6 +175,63 @@ func TestOrderWritesUnit(t *testing.T) {
 						t.Fatalf("error = %v, want %v", err, wantErr)
 					}
 				})
+			}
+		})
+	}
+}
+
+func TestCreateOrderWithItemsTransaction(t *testing.T) {
+	dbErr := errors.New("write failed")
+	for _, tt := range []struct {
+		name, failure string
+	}{
+		{name: "注文と全明細を保存"},
+		{name: "注文保存失敗でロールバック", failure: "order"},
+		{name: "明細保存失敗でロールバック", failure: "item"},
+		{name: "コミット失敗", failure: "commit"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			db, mock := testsql.Open(t)
+			mock.ExpectBegin()
+			orderInsert := mock.ExpectExec("INSERT INTO `orders` (`receipt_token_hash`,`receipt_expires_at`,`status`,`created_at`) VALUES (?,?,?,?)").
+				WithArgs("", nil, "pending", testsql.Now())
+			if tt.failure == "order" {
+				orderInsert.WillReturnError(dbErr)
+				mock.ExpectRollback()
+			} else {
+				orderInsert.WillReturnResult(sqlmock.NewResult(7, 1))
+				firstItem := mock.ExpectExec("INSERT INTO `order_items` (`name`,`order_id`,`menu_id`,`quantity`,`price`,`option`) VALUES (?,?,?,?,?,?)").
+					WithArgs("お茶", 7, 3, 2, 200, "")
+				if tt.failure == "item" {
+					firstItem.WillReturnError(dbErr)
+					mock.ExpectRollback()
+				} else {
+					firstItem.WillReturnResult(sqlmock.NewResult(11, 1))
+					mock.ExpectExec("INSERT INTO `order_items` (`name`,`order_id`,`menu_id`,`quantity`,`price`,`option`) VALUES (?,?,?,?,?,?)").
+						WithArgs("ジュース", 7, 4, 1, 300, "氷なし").
+						WillReturnResult(sqlmock.NewResult(12, 1))
+					commit := mock.ExpectCommit()
+					if tt.failure == "commit" {
+						commit.WillReturnError(dbErr)
+					}
+				}
+			}
+
+			order := models.Order{Status: "pending"}
+			items := []models.OrderItem{
+				{Name: "お茶", MenuID: 3, Quantity: 2, Price: 200},
+				{Name: "ジュース", MenuID: 4, Quantity: 1, Price: 300, Option: "氷なし"},
+			}
+			err := NewOrderRepository(db).CreateOrderWithItems(&order, items)
+			var wantErr error
+			if tt.failure != "" {
+				wantErr = dbErr
+			}
+			if !errors.Is(err, wantErr) {
+				t.Fatalf("error = %v, want %v", err, wantErr)
+			}
+			if tt.failure == "" && order.ID != 7 {
+				t.Errorf("order ID = %d, want 7", order.ID)
 			}
 		})
 	}
