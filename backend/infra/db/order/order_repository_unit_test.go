@@ -146,7 +146,7 @@ func TestOrderWritesUnit(t *testing.T) {
 		args      []driver.Value
 		run       func(*testing.T, *OrderRepository) error
 	}{
-		{"注文作成", "INSERT INTO `orders` (`status`,`created_at`) VALUES (?,?)", []driver.Value{"pending", testsql.Now()}, func(t *testing.T, r *OrderRepository) error {
+		{"注文作成", "INSERT INTO `orders` (`receipt_token_hash`,`receipt_expires_at`,`status`,`created_at`) VALUES (?,?,?,?)", []driver.Value{"", nil, "pending", testsql.Now()}, func(t *testing.T, r *OrderRepository) error {
 			order := models.Order{Status: "pending"}
 			err := r.CreateOrder(&order)
 			if err == nil && (order.ID != 7 || !order.CreatedAt.Equal(testsql.Now())) {
@@ -154,7 +154,7 @@ func TestOrderWritesUnit(t *testing.T) {
 			}
 			return err
 		}},
-		{"注文明細作成", "INSERT INTO `order_items` (`order_id`,`menu_id`,`quantity`,`price`,`option`) VALUES (?,?,?,?,?)", []driver.Value{7, 3, 2, 200, ""}, func(t *testing.T, r *OrderRepository) error {
+		{"注文明細作成", "INSERT INTO `order_items` (`name`,`order_id`,`menu_id`,`quantity`,`price`,`option`) VALUES (?,?,?,?,?,?)", []driver.Value{"", 7, 3, 2, 200, ""}, func(t *testing.T, r *OrderRepository) error {
 			item := models.OrderItem{OrderID: 7, MenuID: 3, Quantity: 2, Price: 200}
 			err := r.CreateOrderItem(&item)
 			if err == nil && item.ID != 7 {
@@ -162,7 +162,7 @@ func TestOrderWritesUnit(t *testing.T) {
 			}
 			return err
 		}},
-		{"ステータス保存", "UPDATE `orders` SET `status`=?,`created_at`=? WHERE `id` = ?", []driver.Value{"ready", testsql.Now(), 7}, func(t *testing.T, r *OrderRepository) error {
+		{"ステータス保存", "UPDATE `orders` SET `receipt_token_hash`=?,`receipt_expires_at`=?,`status`=?,`created_at`=? WHERE `id` = ?", []driver.Value{"", nil, "ready", testsql.Now(), 7}, func(t *testing.T, r *OrderRepository) error {
 			return r.Save(&models.Order{ID: 7, Status: "ready", CreatedAt: testsql.Now()})
 		}},
 	} {
@@ -192,6 +192,44 @@ func TestOrderWritesUnit(t *testing.T) {
 					}
 				})
 			}
+		})
+	}
+}
+
+func TestFindPublicOrdersUsesFilteredProjection(t *testing.T) {
+	for _, scenario := range []string{"active", "empty", "error"} {
+		t.Run(scenario, func(t *testing.T) {
+			db, mock := testsql.Open(t)
+			query := mock.ExpectQuery("SELECT `id`,`status` FROM `orders` WHERE status IN (?,?) ORDER BY id ASC").
+				WithArgs("pending", "ready")
+			dbErr := errors.New("read failed")
+			if scenario == "error" {
+				query.WillReturnError(dbErr)
+			} else {
+				rows := sqlmock.NewRows([]string{"id", "status"})
+				if scenario == "active" {
+					rows.AddRow(1, "pending").AddRow(2, "ready")
+				}
+				query.WillReturnRows(rows).RowsWillBeClosed()
+			}
+			got, err := NewOrderRepository(db).FindPublicOrders()
+			if scenario == "error" {
+				if !errors.Is(err, dbErr) {
+					t.Fatalf("error = %v", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []models.PublicOrder{}
+			if scenario == "active" {
+				want = []models.PublicOrder{{ID: 1, Status: "pending"}, {ID: 2, Status: "ready"}}
+			}
+			if !reflect.DeepEqual(got, want) {
+				t.Fatalf("got = %+v, want = %+v", got, want)
+			}
+			// Any preload would issue an unexpected additional SQL query.
 		})
 	}
 }

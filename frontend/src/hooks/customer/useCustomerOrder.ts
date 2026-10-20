@@ -1,10 +1,16 @@
 import { useCallback, useState } from "react";
-import { createOrder, getOrders } from "../../api/order";
+import { createOrder, getOrders, getPublicOrders } from "../../api/order";
+import { getAuthToken } from "../../api/auth";
+import { getCustomerOrders, saveReceipt } from "../../api/orderReceipts";
 import { useOrderData } from "../useOrderData";
 import { useToast } from "../useToast";
 import { useCart } from "./useCart";
 import { useOrderSession } from "./useOrderSession";
-export function useCustomerOrder(notifyReady = false) {
+const getStaffOrders = () =>
+	getAuthToken() ? getOrders() : Promise.resolve([]);
+export function useCustomerOrder(
+	mode: "customer" | "staff" | "monitor" = "customer",
+) {
 	const {
 		orderSession,
 		orderAccessStatus,
@@ -23,25 +29,31 @@ export function useCustomerOrder(notifyReady = false) {
 	} = useCart(showToast);
 	const onReady = useCallback(
 		(ids: number[]) => {
-			if (notifyReady)
+			if (mode === "monitor")
 				showToast(
 					`オーダー番号 #${ids.join(", #")} ができあがりました！`,
 					"info",
 				);
 		},
-		[notifyReady, showToast],
+		[mode, showToast],
 	);
 	const {
 		menus,
 		orders,
-		setOrders,
 		loading,
 		setLoading,
 		error,
 		fetchData,
 		refreshMenus,
 		refreshOrders,
-	} = useOrderData(onReady);
+	} = useOrderData(
+		onReady,
+		mode === "customer"
+			? getCustomerOrders
+			: mode === "staff"
+				? getStaffOrders
+				: getPublicOrders,
+	);
 	const [successModal, setSuccessModal] = useState<{
 		show: boolean;
 		orderId: number | null;
@@ -73,6 +85,7 @@ export function useCustomerOrder(notifyReady = false) {
 
 			if (result.ok) {
 				const resData = result.order;
+				const persisted = saveReceipt(resData);
 				if (resData.id) {
 					setSuccessModal({ show: true, orderId: resData.id });
 				} else {
@@ -82,8 +95,19 @@ export function useCustomerOrder(notifyReady = false) {
 					);
 				}
 				setCart({});
-				// Reload orders
-				setOrders(await getOrders());
+				if (!persisted)
+					showToast(
+						"注文は完了しました。履歴を端末に保存できないため、注文番号を控えてください。",
+						"info",
+					);
+				try {
+					await refreshOrders();
+				} catch {
+					showToast(
+						"注文は完了しました。履歴を取得できないため、後ほど更新してください。",
+						"info",
+					);
+				}
 			} else {
 				if (result.status === 401) {
 					invalidateSession();

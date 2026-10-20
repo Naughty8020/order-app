@@ -9,17 +9,19 @@ interface Props {
 
 export function OrderTracking({ orders, fetchData }: Props) {
 	const activeOrders = orders
-		.filter(
-			(order) => order.status === "pending" || order.status === "ready",
-		)
+		.filter((order) => order.status !== "completed")
 		.slice()
-		.reverse();
+		.sort((a, b) => b.id - a.id);
+	const completedOrders = orders
+		.filter((order) => order.status === "completed")
+		.slice()
+		.sort((a, b) => b.id - a.id);
 	return (
 		<section className="mt-5 md:mt-8 rounded-2xl border border-white/8 bg-[rgba(20,20,30,0.6)] p-4 md:p-6 backdrop-blur-sm">
 			<div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b border-white/8 pb-3 mb-3">
 				<h2 className="flex items-center gap-2 text-base font-bold text-white">
 					<Clock size={16} className="shrink-0 text-pink-400" />
-					Live 注文ステータス
+					あなたの注文履歴
 				</h2>
 				<button
 					type="button"
@@ -31,6 +33,8 @@ export function OrderTracking({ orders, fetchData }: Props) {
 				</button>
 				<p className="col-span-2 text-xs leading-5 text-zinc-400">
 					番号が「お呼び出し中」になったら、カウンターでお受け取りください。
+					<br />
+					このブラウザーで注文した履歴を、注文から24時間確認できます。
 				</p>
 			</div>
 			{activeOrders.length === 0 ? (
@@ -42,6 +46,16 @@ export function OrderTracking({ orders, fetchData }: Props) {
 					{activeOrders.map((order) => (
 						<OrderCard key={order.id} order={order} />
 					))}
+				</div>
+			)}
+			{completedOrders.length > 0 && (
+				<div className="mt-5">
+					<h3 className="mb-3 text-sm font-bold text-zinc-300">受け取り済み</h3>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-80 overflow-y-auto custom-scrollbar">
+						{completedOrders.map((order) => (
+							<OrderCard key={order.id} order={order} />
+						))}
+					</div>
 				</div>
 			)}
 		</section>

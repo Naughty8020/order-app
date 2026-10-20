@@ -2,9 +2,35 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getMenus } from "../api/menu";
 import { getOrders, type Order } from "../api/order";
 import type { Menu } from "../cart";
-export function useOrderData(onReady?: (ids: number[]) => void) {
+export function useOrderData(
+	onReady?: (ids: number[]) => void,
+	loadOrders = getOrders,
+) {
 	const [menus, setMenus] = useState<Menu[]>([]);
-	const [orders, setOrders] = useState<Order[]>([]);
+	const [orderState, setOrderState] = useState<{
+		source: typeof loadOrders;
+		orders: Order[];
+	}>({ source: loadOrders, orders: [] });
+	const orders = orderState.source === loadOrders ? orderState.orders : [];
+	const orderRequestRef = useRef(0);
+	const fetchOrders = useCallback(async () => {
+		const request = ++orderRequestRef.current;
+		const newOrders = await loadOrders();
+		if (request !== orderRequestRef.current) return;
+		setOrderState({ source: loadOrders, orders: newOrders });
+		const currentReadyIds = newOrders
+			.filter((order) => order.status === "ready")
+			.map((order) => order.id);
+		const newlyReady = currentReadyIds.filter(
+			(id) => !prevReadyIdsRef.current.includes(id),
+		);
+		if (newlyReady.length > 0) onReady?.(newlyReady);
+		prevReadyIdsRef.current = currentReadyIds;
+		return newlyReady;
+	}, [loadOrders, onReady]);
+	const refreshOrders = useCallback(async () => {
+		await fetchOrders();
+	}, [fetchOrders]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const prevReadyIdsRef = useRef<number[]>([]);
@@ -28,43 +54,22 @@ export function useOrderData(onReady?: (ids: number[]) => void) {
 		};
 		// Each request applies its result without waiting for the other.
 		const menusRequest = refreshMenus().catch(reportError);
-		const ordersRequest = getOrders()
-			.then((newOrders) => {
-				setOrders(newOrders);
-
-				// Monitor logic: Detect if new orders became "ready" to flash
-				const currentReadyIds = newOrders
-					.filter((o: Order) => o.status === "ready")
-					.map((o: Order) => o.id);
-				const newlyReady = currentReadyIds.filter(
-					(id) => !prevReadyIdsRef.current.includes(id),
-				);
-				if (newlyReady.length > 0) onReady?.(newlyReady);
-				prevReadyIdsRef.current = currentReadyIds;
-			})
-			.catch(reportError);
+		const ordersRequest = refreshOrders().catch(reportError);
 		await Promise.all([menusRequest, ordersRequest]);
 		setLoading(false);
-	}, [onReady, refreshMenus]);
+	}, [refreshOrders, refreshMenus]);
 
 	useEffect(() => {
+		prevReadyIdsRef.current = [];
 		fetchData();
 		// Refresh menu promotions and orders on already-open screens.
 		const interval = setInterval(() => {
 			void refreshMenus().catch(() => {
 				// Keep the previous menus when polling fails.
 			});
-			void getOrders()
-				.then((newOrders) => {
-					setOrders(newOrders);
-
-					const currentReadyIds = newOrders
-						.filter((o: Order) => o.status === "ready")
-						.map((o: Order) => o.id);
-					const newlyAdded = currentReadyIds.filter(
-						(id: number) => !prevReadyIdsRef.current.includes(id),
-					);
-					if (newlyAdded.length > 0) {
+			void fetchOrders()
+				.then((newlyAdded) => {
+					if (newlyAdded && newlyAdded.length > 0) {
 						// Synthesize sound cue if supported
 						if (typeof window !== "undefined" && "speechSynthesis" in window) {
 							const utterance = new SpeechSynthesisUtterance(
@@ -74,7 +79,6 @@ export function useOrderData(onReady?: (ids: number[]) => void) {
 							window.speechSynthesis.speak(utterance);
 						}
 					}
-					prevReadyIdsRef.current = currentReadyIds;
 				})
 				.catch(() => {
 					// Keep the previous orders when polling fails.
@@ -84,15 +88,12 @@ export function useOrderData(onReady?: (ids: number[]) => void) {
 		return () => {
 			clearInterval(interval);
 			++menuRequestRef.current;
+			++orderRequestRef.current;
 		};
-	}, [fetchData, refreshMenus]);
-	const refreshOrders = useCallback(async () => {
-		setOrders(await getOrders());
-	}, []);
+	}, [fetchData, refreshMenus, fetchOrders]);
 	return {
 		menus,
 		orders,
-		setOrders,
 		loading,
 		setLoading,
 		error,

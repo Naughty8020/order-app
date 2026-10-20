@@ -3,13 +3,22 @@ package models
 import "time"
 
 type Order struct {
-	ID         uint        `gorm:"primaryKey;autoIncrement" json:"id"`
-	Status     string      `gorm:"type:varchar(20);default:'pending'" json:"status"`
-	CreatedAt  time.Time   `json:"created_at"`
-	OrderItems []OrderItem `gorm:"foreignKey:OrderID;constraint:OnDelete:CASCADE" json:"order_items"`
+	ReceiptTokenHash string      `json:"-"`
+	ReceiptExpiresAt *time.Time  `json:"-"`
+	ReceiptToken     string      `gorm:"-" json:"-"`
+	ID               uint        `gorm:"primaryKey;autoIncrement" json:"id"`
+	Status           string      `gorm:"type:varchar(20);default:'pending'" json:"status"`
+	CreatedAt        time.Time   `json:"created_at"`
+	OrderItems       []OrderItem `gorm:"foreignKey:OrderID;constraint:OnDelete:CASCADE" json:"order_items"`
+}
+
+type PublicOrder struct {
+	ID     uint   `json:"id"`
+	Status string `json:"status"`
 }
 
 type OrderItem struct {
+	Name     string `json:"name"`
 	ID       uint   `gorm:"primaryKey;autoIncrement" json:"id"`
 	OrderID  uint   `gorm:"not null;index" json:"order_id"`
 	MenuID   uint   `gorm:"not null" json:"menu_id"`

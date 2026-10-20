@@ -55,7 +55,7 @@ test("スタッフと顧客が注文から提供完了まで進められる", as
 		).toBeVisible();
 
 		const tracking = customer.locator("section").filter({
-			has: customer.getByRole("heading", { name: "Live 注文ステータス" }),
+			has: customer.getByRole("heading", { name: "あなたの注文履歴" }),
 		});
 		const trackedOrder = tracking.getByText(new RegExp(`#${order.id}$`));
 		await expect(trackedOrder).toBeVisible();
@@ -75,7 +75,12 @@ test("スタッフと顧客が注文から提供完了まで進められる", as
 		await expect(
 			staff.getByText("処理待ちの注文はありません", { exact: true }),
 		).toBeVisible();
-		await expect(trackedOrder).toHaveCount(0);
+		await expect(
+			tracking.getByRole("heading", { name: "受け取り済み" }),
+		).toBeVisible();
+		await expect(trackedOrder).toBeVisible();
+		await customer.reload();
+		await expect(trackedOrder).toBeVisible();
 		// 再読み込み後も提供完了履歴が残る（ブラウザ内の状態だけではない）。
 		await staff.reload();
 		await expect(

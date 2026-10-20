@@ -13,6 +13,8 @@ import (
 type Handler interface {
 	CreateOrder(c *gin.Context)
 	GetOrders(c *gin.Context)
+	GetReceipt(c *gin.Context)
+	GetPublicOrders(c *gin.Context)
 	UpdateOrderStatus(c *gin.Context)
 }
 
@@ -29,6 +31,7 @@ func NewOrderHandler(
 }
 
 func (h *orderHandlerImpl) CreateOrder(c *gin.Context) {
+	c.Header("Cache-Control", "no-store")
 	var req CreateOrderDTO
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -86,15 +89,48 @@ func (h *orderHandlerImpl) CreateOrder(c *gin.Context) {
 	}
 
 	res := CreateOrderResponse{
-		ID:         createdOrder.ID,
-		Status:     createdOrder.Status,
-		OrderItems: createdOrder.OrderItems,
+		ReceiptToken:     createdOrder.ReceiptToken,
+		ReceiptExpiresAt: createdOrder.ReceiptExpiresAt,
+		CreatedAt:        createdOrder.CreatedAt,
+		ID:               createdOrder.ID,
+		Status:           createdOrder.Status,
+		OrderItems:       createdOrder.OrderItems,
 	}
 
 	c.JSON(http.StatusCreated, res)
 }
 
+func (h *orderHandlerImpl) GetReceipt(c *gin.Context) {
+	c.Header("Cache-Control", "no-store")
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil || id == 0 {
+		c.JSON(http.StatusGone, gin.H{"error": "invalid or expired receipt"})
+		return
+	}
+	order, err := h.orderUsecase.GetReceipt(uint(id), c.GetHeader("X-Order-Receipt"))
+	if err != nil {
+		if errors.Is(err, orderUsecase.ErrInvalidReceipt) {
+			c.JSON(http.StatusGone, gin.H{"error": "invalid or expired receipt"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve receipt"})
+		}
+		return
+	}
+	c.JSON(http.StatusOK, order)
+}
+
+func (h *orderHandlerImpl) GetPublicOrders(c *gin.Context) {
+	c.Header("Cache-Control", "no-store")
+	orders, err := h.orderUsecase.GetPublicOrders()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve orders"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"orders": orders})
+}
+
 func (h *orderHandlerImpl) GetOrders(c *gin.Context) {
+	c.Header("Cache-Control", "no-store")
 	orders, err := h.orderUsecase.GetOrders()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

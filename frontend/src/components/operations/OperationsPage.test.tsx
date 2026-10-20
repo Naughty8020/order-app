@@ -53,7 +53,8 @@ beforeEach(() => {
 			];
 			return Response.json({});
 		}
-		if (url.endsWith("/orders")) return Response.json({ orders });
+		if (url.endsWith("/orders") || url.endsWith("/orders/public"))
+			return Response.json({ orders });
 		if (url.endsWith("/menus/1")) {
 			menus =
 				init?.method === "DELETE"

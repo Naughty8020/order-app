@@ -15,9 +15,19 @@ import (
 )
 
 type orderUsecaseMock struct {
+	getPublicOrdersFn   func() ([]models.PublicOrder, error)
+	getReceiptFn        func(uint, string) (*models.Order, error)
 	createOrderFn       func(items []orderUsecase.CreateOrderItemInput) (*models.Order, error)
 	getOrdersFn         func() ([]models.Order, error)
 	updateOrderStatusFn func(id uint, status string) (*models.Order, error)
+}
+
+func (m *orderUsecaseMock) GetPublicOrders() ([]models.PublicOrder, error) {
+	return m.getPublicOrdersFn()
+}
+
+func (m *orderUsecaseMock) GetReceipt(id uint, token string) (*models.Order, error) {
+	return m.getReceiptFn(id, token)
 }
 
 func (m *orderUsecaseMock) CreateOrder(items []orderUsecase.CreateOrderItemInput) (*models.Order, error) {
