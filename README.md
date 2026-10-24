@@ -2,7 +2,7 @@
 
 オーダーシステムのアプリケーションです。Go言語で書かれたバックエンドと、React/TanStack Startで構築されたフロントエンドで構成されています。
 
-## 構成スタック (Technology Stack)
+## 構成スタック (Tech Stack)
 
 ### バックエンド (Backend)
 - **言語**: Go 1.25.11
